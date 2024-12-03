@@ -62,6 +62,9 @@ def transfer_labels(
         susp = suspension.copy()
         spat = spatial.copy()
 
+    if "label_transfer" not in spatial.uns:
+        spatial.uns["label_transfer"] = {}
+
     try:
         if kind == "logreg":
             for label in labels:
@@ -74,7 +77,10 @@ def transfer_labels(
                 )
 
                 # add predicted labels to spatial dataset
-                spat.obs[label] = ret["label"]
+                log.debug(f"results: {ret}")
+                log.info(f"adding predicted labels for {label} to spatial dataset")
+                spatial.obs[label] = spatial.obs_names.map(spat.obs[label].to_dict())
+                spatial.uns["label_transfer"][label] = ret
     except TypeError as e:
         raise TypeError(f"wrong keyword argument for kind='{kind}': {e}")
 
@@ -159,6 +165,7 @@ def _logreg_train(
         lr.fit(X, Y)
         n_pass += 1
         if lr.n_iter_ < 100:
+            log.debug(f"converged after {n_pass} passes")
             break
 
     if lr.n_iter_ >= 100:
@@ -193,7 +200,7 @@ def _logreg_predict(
         model (Union[os.PathLike, ClassifierMixin]): Path to trained model or pre-trained model.
         use_rep (str): Representation of gene expression data to use.
         use_pseudobulk (Optional[bool]): Use pseudobulk data.
-        groupby (Optional[str]): Key in `adata.obs` containing labels.
+        groupby (Optional[str]): Key in `adata.obs` containing labels. Only used if `use_pseudobulk` is True.
         feature (Optional[str]): Name of feature in `adata.var` to use.
         key_added (Optional[str]): Key to add to `adata.obs`.
         ground_truth (Optional[str]): Key in `adata.obs` containing ground truth labels.
