@@ -26,15 +26,15 @@ def aggregate_neighbors(
         ValueError: If the cell type labels are not provided in the correct format.
     """
     if isinstance(labels, str):
-        labels = spatial.obsp[labels]
-    if isinstance(labels, np.matrix):
+        labels = spatial.obsm[labels]
+    elif isinstance(labels, np.matrix):
         labels = sp.sparse.csr_matrix(labels)
-    if not isinstance(labels, sp.sparse.csr_matrix):
+    elif not isinstance(labels, sp.sparse.csr_matrix):
         raise ValueError(
             "labels must be provided as a string, a matrix or a sparse matrix"
         )
 
-    aggregated = labels @ spatial.obsp["connectivities"] @ labels.T
+    aggregated = labels.T @ spatial.obsp["connectivities"] @ labels
 
     return aggregated
 
