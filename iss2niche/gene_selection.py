@@ -1,9 +1,14 @@
 from typing import Literal, List
+import logging
 import scanpy as sc
 
 
 def select_genes(
-    suspension: sc.AnnData, spatial: sc.AnnData, kind: Literal["all", "hvg"], **kwargs
+    suspension: sc.AnnData,
+    spatial: sc.AnnData,
+    kind: Literal["all", "hvg"],
+    log: logging.Logger = logging.getLogger(__name__),
+    **kwargs,
 ) -> List[str]:
     """
     Select genes from spatial and suspension datasets.
@@ -26,24 +31,32 @@ def select_genes(
     # get overlapping genes
     genes = set(spatial.var_names.intersection(suspension.var_names).tolist())
 
-    susp = suspension[:, genes]
-    spat = spatial[:, genes]
+    # sub-select genes
+    log.info("select overlapping genes")
+    susp = suspension[:, list(genes)]
+    spat = spatial[:, list(genes)]
 
     # sub-select genes
     try:
         if kind == "hvg":
+            log.info("select highly variable genes")
             hvg_suspension = set(
-                sc.pp.highly_variable_genes(
-                    susp, inplace=False, **kwargs
-                ).index.tolist()
+                sc.pp.highly_variable_genes(susp, inplace=False, **kwargs)
+                .query("highly_variable == True")
+                .index.tolist()
             )
+            log.debug(f"number of HVG in suspension: {len(hvg_suspension)}")
             hvg_spatial = set(
-                sc.pp.highly_variable_genes(
-                    spat, inplace=False, **kwargs
-                ).index.tolist()
+                sc.pp.highly_variable_genes(spat, inplace=False, **kwargs)
+                .query("highly_variable == True")
+                .index.tolist()
             )
+            log.debug(f"number of HVG in spatial: {len(hvg_spatial)}")
             genes &= hvg_suspension & hvg_spatial
+            log.debug(f"number of HVG in overlap: {len(genes)}")
     except TypeError as e:
-        raise TypeError(f"wrong keyword argument for kind='{kind}': {e}")
+        e_str = f"wrong keyword argument for kind='{kind}': {e}"
+        log.error(e_str)
+        raise TypeError(e_str)
 
     return list(genes)
