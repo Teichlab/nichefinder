@@ -103,6 +103,8 @@ def plot_niches(
         labels (List[str]): Cell type labels.
         threshold (float): Threshold for soft-memberships.
     """
+    assert len(labels) == membership.shape[0]
+
     try:
         import networkx as nx
     except ImportError:
@@ -116,16 +118,18 @@ def plot_niches(
 
     # Create a bipartite graph
     G = nx.Graph()
-    G.add_nodes_from(range(membership.shape[0]), bipartite=0)
+    G.add_nodes_from(labels, bipartite=0)
     G.add_nodes_from(range(membership.shape[1]), bipartite=1)
-    for i in range(membership.shape[0]):
+    for i, ct in enumerate(labels):
         for j in range(membership.shape[1]):
             if membership[i, j] == 1:
-                G.add_edge(i, j)
+                G.add_edge(ct, j)
 
     # remove cell types that are not shared between multiple niches
     degrees = G.degree()
-    nodes_to_remove = [node for node, degree in degrees if degree < 2]
+    nodes_to_remove = [
+        node for node, degree in degrees if node in labels and degree < 2
+    ]
     G.remove_nodes_from(nodes_to_remove)
 
     # Plot the bipartite graph using a kamada-kawai layout
@@ -133,14 +137,14 @@ def plot_niches(
     nx.draw(
         G,
         pos,
-        with_labels=False,
+        with_labels=True,
         node_size=300,
         node_color="skyblue",
         edge_color="gray",
     )
-    nx.draw_networkx_labels(
-        G, pos, labels={i: labels[i] for i in range(len(labels))}, font_size=10
-    )
+    # nx.draw_networkx_labels(
+    #     G, pos, labels={i: labels[i] for i in range(len(labels))}, font_size=10
+    # )
     plt.title("Niche Analysis")
     plt.show()
 
