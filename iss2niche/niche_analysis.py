@@ -88,20 +88,21 @@ def find_niches(
 
 def plot_niches(
     membership: np.matrix,
-    features: np.matrix,
     labels: List[str],
     threshold: float = 0.5,
+    only_shared: bool = False,
 ) -> None:
     """
     Plot the niches as a bipartite graph. One type of node represents the niches/clusters,
     while the other type represents the cell types that are shared between multiple niches
-    after applying a threshold to the soft-memberships.
+    after applying a threshold to the soft-memberships (thresholding is applied after scaling
+    the soft-memberships to [0, 1]).
 
     Args:
         membership (np.matrix): Membership matrix.
-        features (np.matrix): Features matrix.
         labels (List[str]): Cell type labels.
         threshold (float): Threshold for soft-memberships.
+        only_shared (bool): Plot only shared cell types between multiple niches.
     """
     assert len(labels) == membership.shape[0]
 
@@ -113,7 +114,10 @@ def plot_niches(
             "install it via `pip install networkx`"
         )
 
-    # Apply threshold to soft-memberships
+    # Scale and apply threshold to soft-memberships
+    membership = (membership - membership.min(axis=0)) / (
+        membership.max(axis=0) - membership.min(axis=0)
+    )
     membership = (membership > threshold).astype(int)
 
     # Create a bipartite graph
@@ -125,10 +129,11 @@ def plot_niches(
             if membership[i, j] == 1:
                 G.add_edge(ct, j)
 
-    # remove cell types that are not shared between multiple niches
+    # remove cell types that are not shared between multiple niches:
+    degree_thr = 2 if only_shared else 1
     degrees = G.degree()
     nodes_to_remove = [
-        node for node, degree in degrees if node in labels and degree < 2
+        node for node, degree in degrees if node in labels and degree < degree_thr
     ]
     G.remove_nodes_from(nodes_to_remove)
 
