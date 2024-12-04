@@ -32,7 +32,7 @@ def select_genes(
     genes = set(spatial.var_names.intersection(suspension.var_names).tolist())
 
     # sub-select genes
-    log.info("select overlapping genes")
+    log.info(f"select {len(genes)} overlapping genes")
     susp = suspension[:, list(genes)]
     spat = spatial[:, list(genes)]
 
@@ -45,15 +45,15 @@ def select_genes(
                 .query("highly_variable == True")
                 .index.tolist()
             )
-            log.debug(f"number of HVG in suspension: {len(hvg_suspension)}")
+            log.info(f"  > number of HVG in suspension: {len(hvg_suspension)}")
             hvg_spatial = set(
                 sc.pp.highly_variable_genes(spat, inplace=False, **kwargs)
                 .query("highly_variable == True")
                 .index.tolist()
             )
-            log.debug(f"number of HVG in spatial: {len(hvg_spatial)}")
+            log.info(f"  > number of HVG in spatial: {len(hvg_spatial)}")
             genes &= hvg_suspension & hvg_spatial
-            log.debug(f"number of HVG in overlap: {len(genes)}")
+            log.info(f"  > number of HVG in overlap: {len(genes)}")
     except TypeError as e:
         e_str = f"wrong keyword argument for kind='{kind}': {e}"
         log.error(e_str)
