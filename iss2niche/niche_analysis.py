@@ -175,7 +175,12 @@ def plot_niches(
 
 
 def _nmf(adjacency_matrix: sp.sparse.csr_matrix, k: int, **kwargs):
-    model = NMF(n_components=k, init="random", random_state=0, **kwargs)
+    # Set default keyword arguments
+    use_kwargs = {"max_iter": 1000, "init": "random", "random_state": 0}
+    use_kwargs.update(kwargs)
+
+    # Run NMF
+    model = NMF(n_components=k, **use_kwargs)
     W = model.fit_transform(adjacency_matrix)
     H = model.components_
 
