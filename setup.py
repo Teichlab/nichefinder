@@ -17,6 +17,7 @@ setup(
         "pandas",
         "joblib",
         "networkx",
+        "numpy-groupies",
     ],
     extras_require={"dev": ["pytest", "flake8", "black"]},
     classifiers=[
