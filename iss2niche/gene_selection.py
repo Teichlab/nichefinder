@@ -12,6 +12,7 @@ def select_genes(
     log: logging.Logger = logging.getLogger(__name__),
     kwargs_susp: Optional[dict] = None,
     kwargs_spat: Optional[dict] = None,
+    **kwargs,
 ) -> List[str]:
     """
     Select genes from spatial and suspension datasets.
@@ -29,6 +30,7 @@ def select_genes(
         log (logging.Logger): Logger object for logging messages.
         kwargs_susp: Additional keyword arguments passed to downstream functions, depending on `kind_susp`.
         kwargs_spat: Additional keyword arguments passed to downstream functions, depending on `kind_spat`.
+        **kwargs: Additional keyword arguments passed to both suspension and spatial data gene selection.
 
     Returns:
         List[str]: List of selected gene names.
@@ -39,8 +41,8 @@ def select_genes(
     # set default kind for suspension and spatial data
     kind_susp = kind_susp or kind
     kind_spat = kind_spat or kind
-    kwargs_susp = kwargs_susp or {}
-    kwargs_spat = kwargs_spat or {}
+    kwargs_susp = {**kwargs, **(kwargs_susp or {})}
+    kwargs_spat = {**kwargs, **(kwargs_spat or {})}
 
     # get overlapping genes
     genes = set(spatial.var_names.intersection(suspension.var_names).tolist())
