@@ -1,4 +1,5 @@
-from typing import Union, Dict, Any, Tuple, List
+from typing import Union, Dict, Any, Tuple, List, Optional
+import logging
 
 import numpy as np
 import scanpy as sc
@@ -40,7 +41,12 @@ def aggregate_neighbors(
 
 
 def find_niches(
-    neighbors: sp.sparse.csr_matrix, max_clusters: int = 10, plot: bool = False
+    neighbors: sp.sparse.csr_matrix,
+    max_clusters: int = 10,
+    n_clusters: Optional[int] = None,
+    plot: bool = False,
+    log: logging.Logger = logging.getLogger(__name__),
+    **kwargs,
 ) -> Dict[str, Any]:
     """
     Find niches in spatial neighbors using non-negative matrix factorization (NMF).
@@ -49,41 +55,55 @@ def find_niches(
     Args:
         neighbors (sp.sparse.csr_matrix): Aggregated spatial neighbors.
         max_clusters (int): Maximum number of clusters for NMF.
+        n_clusters (Optional[int]): Number of clusters for NMF. If None, the optimal number is determined automatically.
         plot (bool): Plot the reconstruction error curve.
+        log (logging.Logger): Logger object for logging messages.
+        **kwargs: Additional keyword arguments passed to `sklearn.decomposition.NMF`.
 
     Returns:
         Dict[str, Any]: Dictionary containing the optimal number of clusters, membership matrix and features matrix.
     """
-    # Calculate reconstruction errors for different cluster numbers
-    errors, models = _calculate_reconstruction_errors(neighbors, max_clusters)
-
-    # Find the elbow point (optimal number of clusters)
-    optimal_clusters = _find_elbow_point(errors)
-
-    # Plot the reconstruction error curve if required
-    if plot:
-        plt.plot(
-            range(1, max_clusters + 1),
-            errors,
-            marker="o",
-            label="Reconstruction Error",
+    if n_clusters is None or plot:
+        # Calculate reconstruction errors for different cluster numbers
+        log.info(f"calculate reconstruction errors for {max_clusters} clusters")
+        errors, models = _calculate_reconstruction_errors(
+            neighbors, max_clusters, **kwargs
         )
-        plt.axvline(
-            optimal_clusters,
-            color="r",
-            linestyle="--",
-            label=f"Optimal Clusters: {optimal_clusters}",
-        )
-        plt.xlabel("Number of Clusters")
-        plt.ylabel("Reconstruction Error")
-        plt.title("NMF Reconstruction Error vs. Number of Clusters")
-        plt.legend()
-        plt.show()
 
-    # Return the optimal number of clusters and the corresponding model
-    W, H = models[optimal_clusters - 1]
+        # Find the elbow point (optimal number of clusters)
+        if n_clusters is None:
+            n_clusters = _find_elbow_point(errors)
+            log.info(f"selected optimal number of clusters: {n_clusters}")
 
-    return {"n": optimal_clusters, "membership": W, "features": H}
+        # Plot the reconstruction error curve if required
+        if plot:
+            log.info(f"ploting reconstruction error")
+            plt.plot(
+                range(1, max_clusters + 1),
+                errors,
+                marker="o",
+                label="Reconstruction Error",
+            )
+            plt.axvline(
+                n_clusters,
+                color="r",
+                linestyle="--",
+                label=f"Selected Clusters: {n_clusters}",
+            )
+            plt.xlabel("Number of Clusters")
+            plt.ylabel("Reconstruction Error")
+            plt.title("NMF Reconstruction Error vs. Number of Clusters")
+            plt.legend()
+            plt.show()
+
+        # Return the optimal number of clusters and the corresponding model
+        W, H = models[n_clusters - 1]
+    else:
+        # Calculate NMF with the specified number of clusters
+        log.info(f"running NMF with {n_clusters} clusters")
+        H, W, _ = _nmf(neighbors, n_clusters, **kwargs)
+
+    return {"n": n_clusters, "membership": W, "features": H}
 
 
 def plot_niches(
@@ -154,8 +174,18 @@ def plot_niches(
     plt.show()
 
 
+def _nmf(adjacency_matrix: sp.sparse.csr_matrix, k: int, **kwargs):
+    model = NMF(n_components=k, init="random", random_state=0, **kwargs)
+    W = model.fit_transform(adjacency_matrix)
+    H = model.components_
+
+    # Calculate the Frobenius norm of the difference (reconstruction error)
+    reconstruction_error = np.linalg.norm(adjacency_matrix - W @ H, ord="fro")
+    return H, W, reconstruction_error
+
+
 def _calculate_reconstruction_errors(
-    adjacency_matrix: sp.sparse.csr_matrix, max_components: int
+    adjacency_matrix: sp.sparse.csr_matrix, max_components: int, **kwargs
 ) -> Tuple[List[float], List[Tuple[np.matrix, np.matrix]]]:
     """
     Calculate the reconstruction errors for different numbers of components in NMF.
@@ -163,6 +193,7 @@ def _calculate_reconstruction_errors(
     Args:
         adjacency_matrix (sp.sparse.csr_matrix): Aggregated spatial neighbors.
         max_components (int): Maximum number of components for NMF.
+        **kwargs: Additional keyword arguments passed to `sklearn.decomposition.NMF`.
 
     Returns:
         Tuple[List[float], List[Tuple[np.matrix, np.matrix]]]: List of reconstruction errors and models.
@@ -170,14 +201,10 @@ def _calculate_reconstruction_errors(
     errors = []
     models = []
     for k in range(1, max_components + 1):
-        model = NMF(n_components=k, init="random", random_state=0)
-        W = model.fit_transform(adjacency_matrix)
-        H = model.components_
-
-        # Calculate the Frobenius norm of the difference (reconstruction error)
-        reconstruction_error = np.linalg.norm(adjacency_matrix - W @ H, ord="fro")
+        H, W, reconstruction_error = _nmf(adjacency_matrix, k, **kwargs)
         errors.append(reconstruction_error)
         models.append((W, H))  # Store models for later use
+
     return errors, models
 
 
