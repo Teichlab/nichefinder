@@ -6,7 +6,7 @@ import scanpy as sc
 def select_genes(
     suspension: sc.AnnData,
     spatial: sc.AnnData,
-    kind: Literal["all", "hvg"],
+    kind: Literal["all", "hvg"] = "all",
     kind_susp: Optional[Literal["all", "hvg"]] = None,
     kind_spat: Optional[Literal["all", "hvg"]] = None,
     log: logging.Logger = logging.getLogger(__name__),
