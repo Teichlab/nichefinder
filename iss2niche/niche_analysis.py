@@ -1,74 +1,102 @@
 from typing import Union, Dict, Any, Tuple, List, Optional
+from collections import namedtuple
 import logging
 
 import numpy as np
 import scanpy as sc
 import scipy as sp
+from scipy.cluster.hierarchy import linkage, leaves_list, optimal_leaf_ordering
+import pandas as pd
 
 from sklearn.decomposition import NMF
 import matplotlib.pyplot as plt
 
 
+NicheResult = namedtuple("NicheResult", ["n", "membership", "features"])
+
+
 def aggregate_neighbors(
-    spatial: sc.AnnData, labels: Union[str, np.matrix, sp.sparse.csr_matrix]
-) -> sp.sparse.csr_matrix:
+    spatial: sc.AnnData, label: str, scale: bool = True
+) -> pd.DataFrame:
     """
     Aggregate spatial neighbors based on cell type labels.
     The labels are provided as a matrix of cell type probabilities.
 
     Args:
         spatial (sc.AnnData): Spatial dataset containing spatial neighbors.
-        labels (Union[str,np.matrix,sp.sparse.csr_matrix]): Cell type labels.
+        label (str): Label with key in `spatial.uns['label_transfer']` containing label probabilities.
+        scale (bool): Scale aggregated spatial neighbors by the expected number of connections between cell types.
 
     Returns:
         sp.sparse.csr_matrix: Aggregated spatial neighbors.
-
-    Raises:
-        ValueError: If the cell type labels are not provided in the correct format.
     """
-    if isinstance(labels, str):
-        labels = spatial.obsm[labels]
-    elif isinstance(labels, np.matrix):
-        labels = sp.sparse.csr_matrix(labels)
-    elif not isinstance(labels, sp.sparse.csr_matrix):
-        raise ValueError(
-            "labels must be provided as a string, a matrix or a sparse matrix"
-        )
+    label_prob = spatial.obsm[spatial.uns["label_transfer"][label]["obsm_key"]]
+    labels = spatial.uns["label_transfer"][label]["labels"]
 
-    aggregated = labels.T @ spatial.obsp["connectivities"] @ labels
+    aggregated = label_prob.T @ spatial.obsp["connectivities"] @ label_prob
 
-    return aggregated
+    if scale:
+        aggregated = _scale_by_expectation(np.array(aggregated), np.array(label_prob))
+
+    return pd.DataFrame(aggregated, index=labels, columns=labels)
+
+
+def _scale_by_expectation(
+    aggregated: np.array,
+    label_prob: np.array,
+) -> np.array:
+    """
+    Scale aggregated spatial neighbors by the expected number of connections between cell types.
+
+    Args:
+        aggregated (np.array): Aggregated spatial neighbors.
+        label_prob (np.array): Label probabilities.
+
+    Returns:
+        np.matrix: Normalized aggregated spatial neighbors.
+    """
+    agg_rand = aggregated.sum(axis=0) * np.nanmean(label_prob, axis=0).reshape(-1, 1)
+    agg_norm = aggregated / agg_rand
+    return agg_norm
 
 
 def find_niches(
-    neighbors: sp.sparse.csr_matrix,
+    neighbors: Union[pd.DataFrame, sp.sparse.csr_matrix],
     max_clusters: int = 10,
     n_clusters: Optional[int] = None,
     plot: bool = False,
+    labels: Optional[List[str]] = None,
+    return_dataframes: bool = True,
     log: logging.Logger = logging.getLogger(__name__),
     **kwargs,
-) -> Dict[str, Any]:
+) -> NicheResult:
     """
     Find niches in spatial neighbors using non-negative matrix factorization (NMF).
     The optimal number of clusters (up to `max_clusters`) is automatically determined using the elbow point method.
 
     Args:
-        neighbors (sp.sparse.csr_matrix): Aggregated spatial neighbors.
+        neighbors (Union[pd.DataFrame, sp.sparse.csr_matrix]): Aggregated spatial neighbors.
         max_clusters (int): Maximum number of clusters for NMF.
         n_clusters (Optional[int]): Number of clusters for NMF. If None, the optimal number is determined automatically.
         plot (bool): Plot the reconstruction error curve.
+        labels (Optional[List[str]]): Cell type labels. Provide if `neighbors` is not a DataFrame.
+        return_dataframes (bool): Return the results as DataFrames instead of matrices.
         log (logging.Logger): Logger object for logging messages.
         **kwargs: Additional keyword arguments passed to `sklearn.decomposition.NMF`.
 
     Returns:
-        Dict[str, Any]: Dictionary containing the optimal number of clusters, membership matrix and features matrix.
+        NicheResult: namedtuple containing the optimal number of clusters (n),
+                     membership matrix (W) and features matrix (H).
     """
+    if isinstance(neighbors, pd.DataFrame):
+        nmat = sp.sparse.csr_matrix(neighbors.to_numpy())
+    else:
+        nmat = neighbors
+
     if n_clusters is None or plot:
         # Calculate reconstruction errors for different cluster numbers
         log.info(f"calculate reconstruction errors for {max_clusters} clusters")
-        errors, models = _calculate_reconstruction_errors(
-            neighbors, max_clusters, **kwargs
-        )
+        errors, models = _calculate_reconstruction_errors(nmat, max_clusters, **kwargs)
 
         # Find the elbow point (optimal number of clusters)
         if n_clusters is None:
@@ -101,16 +129,28 @@ def find_niches(
     else:
         # Calculate NMF with the specified number of clusters
         log.info(f"running NMF with {n_clusters} clusters")
-        H, W, _ = _nmf(neighbors, n_clusters, **kwargs)
+        H, W, _ = _nmf(nmat, n_clusters, **kwargs)
 
-    return {"n": n_clusters, "membership": W, "features": H}
+    if return_dataframes:
+        if labels is None:
+            if isinstance(neighbors, pd.DataFrame):
+                labels = neighbors.index
+            else:
+                raise ValueError(
+                    "Labels must be provided for `return_dataframes==True`, if `neighbors` is not a DataFrame."
+                )
+        W = pd.DataFrame(W, index=labels, columns=range(n_clusters))
+        H = pd.DataFrame(H, index=range(n_clusters), columns=labels)
+
+    return NicheResult(n=n_clusters, membership=W, features=H)
 
 
 def plot_niches(
-    membership: np.matrix,
-    labels: List[str],
+    membership: Union[np.matrix, pd.DataFrame],
+    labels: Optional[List[str]] = None,
     threshold: float = 0.5,
     only_shared: bool = False,
+    scale: Optional[int] = 0,
 ) -> None:
     """
     Plot the niches as a bipartite graph. One type of node represents the niches/clusters,
@@ -119,12 +159,20 @@ def plot_niches(
     the soft-memberships to [0, 1]).
 
     Args:
-        membership (np.matrix): Membership matrix.
-        labels (List[str]): Cell type labels.
+        membership (Union[np.matrix, pd.DataFrame]): Membership matrix.
+        labels (Optional[List[str]]): Cell type labels. Required if `membership` is not a DataFrame.
         threshold (float): Threshold for soft-memberships.
         only_shared (bool): Plot only shared cell types between multiple niches.
+        scale (Optional[int]): Standard-scale the soft-memberships by the specified axis (0 or 1) if not None.
     """
-    assert len(labels) == membership.shape[0]
+    if isinstance(membership, pd.DataFrame):
+        labels = membership.index.tolist()
+        niches = membership.columns.tolist()
+        membership = membership.to_numpy()
+    else:
+        assert labels is not None
+        assert len(labels) == membership.shape[0]
+        niches = range(membership.shape[1])
 
     try:
         import networkx as nx
@@ -135,17 +183,20 @@ def plot_niches(
         )
 
     # Scale and apply threshold to soft-memberships
-    membership = (membership - membership.min(axis=0)) / (
-        membership.max(axis=0) - membership.min(axis=0)
-    )
+    if scale is not None:
+        shp = (-1, 1) if scale == 1 else (1, -1)
+        membership = (membership - membership.min(axis=scale).reshape(*shp)) / (
+            membership.max(axis=scale).reshape(*shp)
+            - membership.min(axis=scale).reshape(*shp)
+        )
     membership = (membership > threshold).astype(int)
 
     # Create a bipartite graph
     G = nx.Graph()
     G.add_nodes_from(labels, bipartite=0)
-    G.add_nodes_from(range(membership.shape[1]), bipartite=1)
+    G.add_nodes_from(niches, bipartite=1)
     for i, ct in enumerate(labels):
-        for j in range(membership.shape[1]):
+        for j in niches:
             if membership[i, j] == 1:
                 G.add_edge(ct, j)
 
@@ -172,6 +223,64 @@ def plot_niches(
     # )
     plt.title("Niche Analysis")
     plt.show()
+
+
+def plot_aggregated_neighbors(
+    neighbors: Union[pd.DataFrame, sp.sparse.csr_matrix],
+    membership: Union[np.matrix, pd.DataFrame],
+    labels: Optional[List[str]] = None,
+    niches: Optional[List[str]] = None,
+    **kwargs,
+) -> None:
+    """
+    Plot the aggregated spatial neighbors with cell type labels and niches.
+    Aggregated neighbors are displayed as a seaborn clustermap, with niches as annotations.
+
+    Args:
+        neighbors (Union[pd.DataFrame, sp.sparse.csr_matrix]): Aggregated spatial neighbors.
+        membership (Union[np.matrix, pd.DataFrame]): Membership matrix.
+        labels (Optional[List[str]]): Cell type labels. Required if `neighbors` is not a DataFrame.
+        niches (Optional[List[str]]): Niche labels. Required if `membership` is not a DataFrame.
+        **kwargs: Additional keyword arguments passed to `seaborn.clustermap`.
+    """
+    try:
+        import seaborn as sns
+    except ImportError:
+        raise ImportError(
+            "seaborn is required for this function, "
+            "install it via `pip install seaborn`"
+        )
+
+    # Check if row/col names are provided
+    if not isinstance(neighbors, pd.DataFrame):
+        assert labels is not None
+        assert len(labels) == neighbors.shape[0]
+        neighbors = pd.DataFrame(neighbors.toarray(), index=labels, columns=labels)
+    if not isinstance(membership, pd.DataFrame):
+        assert niches is not None
+        assert len(niches) == membership.shape[1]
+        membership = pd.DataFrame(membership, index=labels, columns=niches)
+
+    # Order the niches (columns of membership matrix) based on the hierarchical clustering
+    linkage_matrix = linkage(membership.to_numpy().T, method="average")
+    linkage_matrix = optimal_leaf_ordering(linkage_matrix, membership.to_numpy().T)
+    ordered_indices = leaves_list(linkage_matrix)
+    ordered_membership = membership.iloc[:, ordered_indices]
+
+    # Convert membership values to color values using a continuous palette
+    cmap = sns.color_palette("viridis", as_cmap=True)
+    row_colors = (
+        ordered_membership.stack()
+        .map(lambda x: cmap(x / membership.values.max()))
+        .unstack()
+    )
+
+    # Plot the clustermap with niches as annotations
+    sns.clustermap(
+        neighbors,
+        row_colors=row_colors,
+        **kwargs,
+    )
 
 
 def _nmf(adjacency_matrix: sp.sparse.csr_matrix, k: int, **kwargs):
@@ -229,6 +338,6 @@ def _find_elbow_point(errors: List[float]) -> int:
 
     # Find the elbow point
     elbow_index = (
-        np.argmin(second_differences) + 1
+        np.argmax(second_differences) + 1
     )  # +1 to adjust for second derivative index shift
     return elbow_index + 1  # +1 to adjust for 1-based cluster count

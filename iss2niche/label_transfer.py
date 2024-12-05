@@ -80,7 +80,18 @@ def transfer_labels(
                 log.debug(f"results: {ret}")
                 log.info(f"adding predicted labels for {label} to spatial dataset")
                 spatial.obs[label] = spatial.obs_names.map(spat.obs[label].to_dict())
-                spatial.uns["label_transfer"][label] = ret
+                spatial.obsm[f"{label}_prob"] = (
+                    ret["prob"].loc[spatial.obs_names].to_numpy()
+                )
+                spatial.uns["label_transfer"][label] = {
+                    "obsm_key": f"{label}_prob",
+                    "labels": ret["prob"].columns.tolist(),
+                    "model": model,
+                    "genes": genes,
+                    "kind": kind,
+                    **train_kwargs,
+                    **predict_kwargs,
+                }
     except TypeError as e:
         raise TypeError(f"wrong keyword argument for kind='{kind}': {e}")
 
@@ -323,3 +334,26 @@ def _logreg_predict(
 
     if return_predict:
         return results
+
+
+def add_prob_to_obs(adata: sc.AnnData, key: str) -> sc.AnnData:
+    """
+    Add probabilities saved in `adata.obsm` to `adata.obs`.
+
+    Args:
+        adata (sc.AnnData): AnnData object.
+        key (str): Key in `adata.uns["label_transfer"]`.
+    """
+    entry = adata.uns["label_transfer"][key]
+    prob_df = pd.DataFrame(
+        adata.obsm[entry["obsm_key"]],
+        index=adata.obs_names,
+        columns=entry["labels"],
+    )
+    adata.obs = pd.merge(
+        adata.obs,
+        prob_df,
+        left_index=True,
+        right_index=True,
+    )
+    return adata
