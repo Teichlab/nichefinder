@@ -1,4 +1,4 @@
-from typing import Union, Dict, Any, Tuple, List, Optional
+from typing import Union, Dict, Any, Tuple, List, Optional, Literal
 from collections import namedtuple
 import logging
 
@@ -16,7 +16,9 @@ NicheResult = namedtuple("NicheResult", ["n", "membership", "features"])
 
 
 def aggregate_neighbors(
-    spatial: sc.AnnData, label: str, scale: bool = True
+    spatial: sc.AnnData,
+    label: str,
+    scale: Optional[Literal["expected", "expected_no_diag"]] = "expected",
 ) -> pd.DataFrame:
     """
     Aggregate spatial neighbors based on cell type labels.
@@ -25,7 +27,11 @@ def aggregate_neighbors(
     Args:
         spatial (sc.AnnData): Spatial dataset containing spatial neighbors.
         label (str): Label with key in `spatial.uns['label_transfer']` containing label probabilities.
-        scale (bool): Scale aggregated spatial neighbors by the expected number of connections between cell types.
+        scale (Optional[Literal['expected', 'expected_no_diag']]): Scale aggregated spatial neighbors by the expected
+            number of connections between cell types. If 'expected', the expected number of connections is calculated
+            based on overall label frequencies, assuming random rewiring. If 'expected_no_diag', self-connections are
+            excluded from the background expectation (this increases connections for cell types in homogenous spatial
+            regions). Default is 'expected'.
 
     Returns:
         sp.sparse.csr_matrix: Aggregated spatial neighbors.
@@ -35,29 +41,43 @@ def aggregate_neighbors(
 
     aggregated = label_prob.T @ spatial.obsp["connectivities"] @ label_prob
 
-    if scale:
-        aggregated = _scale_by_expectation(np.array(aggregated), np.array(label_prob))
+    if scale == "expected":
+        aggregated = _scale_by_expectation(np.array(aggregated))
+    elif scale == "expected_no_diag":
+        aggregated = _scale_by_expectation(np.array(aggregated), exclude_diagonal=True)
 
     return pd.DataFrame(aggregated, index=labels, columns=labels)
 
 
 def _scale_by_expectation(
     aggregated: np.array,
-    label_prob: np.array,
+    exclude_diagonal: bool = False,
 ) -> np.array:
     """
     Scale aggregated spatial neighbors by the expected number of connections between cell types.
 
     Args:
         aggregated (np.array): Aggregated spatial neighbors.
-        label_prob (np.array): Label probabilities.
+        exclude_diagonal (bool): Exclude diagonal elements from background expectation. If some cell types occur
+                                 in homogenous regions, this mitigates the effect of surface-volume ratio.
 
     Returns:
         np.matrix: Normalized aggregated spatial neighbors.
     """
-    agg_rand = aggregated.sum(axis=0) * np.nanmean(label_prob, axis=0).reshape(-1, 1)
-    agg_norm = aggregated / agg_rand
-    return agg_norm
+    # estimate label probabilities
+    agg = aggregated.copy()
+    if exclude_diagonal:
+        agg -= np.diag(np.diag(agg))
+
+    label_prob = agg.sum(axis=0)
+    label_prob /= label_prob.sum()
+
+    # calculate expected number of connections based on label probabilities
+    agg_rand = aggregated.sum(axis=0) * label_prob.reshape(-1, 1)
+    if exclude_diagonal:
+        agg_rand[np.diag_indices_from(agg_rand)] = np.diag(aggregated)
+
+    return aggregated / agg_rand
 
 
 def find_niches(
