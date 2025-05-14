@@ -6,7 +6,7 @@ setup(
     description="A project for niche analysis using spatial and suspension datasets",
     author="J.P.Pett",
     author_email="jp30@sanger.ac.uk",
-    url="https://github.com/Teichlab/snp2cell",
+    url="https://github.com/Teichlab/nichefinder",
     packages=find_packages(),
     install_requires=[
         "numpy",

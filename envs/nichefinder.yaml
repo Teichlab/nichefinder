@@ -1,4 +1,4 @@
-name: iss2niche
+name: nichefinder
 channels:
   - conda-forge
 dependencies:
