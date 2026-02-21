@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="iss2niche",
+    name="nichefinder",
     version="0.1.0",
     description="A project for niche analysis using spatial and suspension datasets",
     author="J.P.Pett",
