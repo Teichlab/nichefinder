@@ -168,7 +168,7 @@ def _logreg_train(
     else:
         log.debug("creating new LR model")
         lr = LogisticRegression(
-            penalty="l2", C=0.1, solver="saga", warm_start=True, n_jobs=-1, **kwargs
+            C=0.1, solver="saga", warm_start=True, **kwargs
         )
 
     n_pass = 0

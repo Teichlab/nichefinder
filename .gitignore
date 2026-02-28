@@ -7,3 +7,8 @@ build/
 snp2cell.egg-info/
 .DS_Store
 benchmark/
+.venv
+.pytest_cache
+.vscode
+notebooks/data
+docs/notebooks/data

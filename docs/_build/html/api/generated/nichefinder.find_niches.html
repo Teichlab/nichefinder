@@ -1,0 +1,175 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nichefinder.find_niches &mdash; nichefinder 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css?v=6644e6bb" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="nichefinder.cell_niche_scores" href="nichefinder.cell_niche_scores.html" />
+    <link rel="prev" title="nichefinder.aggregate_neighbors" href="nichefinder.aggregate_neighbors.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            nichefinder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/example_simulated_data.html">nichefinder — Simulated Data Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/niche_score_mapping.html">nichefinder — Niche Score Mapping</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../gene_selection.html">Gene Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../label_transfer.html">Label Transfer</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../niche_analysis.html">Niche Analysis</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="nichefinder.aggregate_neighbors.html">nichefinder.aggregate_neighbors</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">nichefinder.find_niches</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nichefinder.find_niches"><code class="docutils literal notranslate"><span class="pre">find_niches()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="nichefinder.cell_niche_scores.html">nichefinder.cell_niche_scores</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nichefinder.niche_scores_from_nmf.html">nichefinder.niche_scores_from_nmf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nichefinder.plot_niches.html">nichefinder.plot_niches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nichefinder.plot_aggregated_neighbors.html">nichefinder.plot_aggregated_neighbors</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">nichefinder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../niche_analysis.html">Niche Analysis</a></li>
+      <li class="breadcrumb-item active">nichefinder.find_niches</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/generated/nichefinder.find_niches.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="nichefinder-find-niches">
+<h1>nichefinder.find_niches<a class="headerlink" href="#nichefinder-find-niches" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="nichefinder.find_niches">
+<span class="sig-prename descclassname"><span class="pre">nichefinder.</span></span><span class="sig-name descname"><span class="pre">find_niches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neighbors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html#scipy.sparse.csr_matrix" title="(in SciPy v1.17.0)"><span class="pre">csr_matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_clusters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_clusters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dataframes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symmetric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><span class="pre">Logger</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">&lt;Logger</span> <span class="pre">nichefinder.niche_analysis</span> <span class="pre">(WARNING)&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NicheResult</span></span></span><a class="reference internal" href="../../_modules/nichefinder/niche_analysis.html#find_niches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nichefinder.find_niches" title="Link to this definition"></a></dt>
+<dd><p>Find niches in spatial neighbors using non-negative matrix factorization (NMF).
+The optimal number of clusters (up to <cite>max_clusters</cite>) is automatically determined using the elbow point method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>neighbors</strong> (<em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>sp.sparse.csr_matrix</em><em>]</em>) – Aggregated spatial neighbors.</p></li>
+<li><p><strong>max_clusters</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Maximum number of clusters for NMF.</p></li>
+<li><p><strong>n_clusters</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Number of clusters for NMF. If None, the optimal number is determined automatically.</p></li>
+<li><p><strong>plot</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Plot the reconstruction error curve.</p></li>
+<li><p><strong>labels</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>]</em>) – Cell type labels. Provide if <cite>neighbors</cite> is not a DataFrame.</p></li>
+<li><p><strong>return_dataframes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Return the results as DataFrames instead of matrices.</p></li>
+<li><p><strong>symmetric</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Run symmetric NMF (SymNMF) which factorises the neighbour
+matrix as <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">≈</span> <span class="pre">H</span> <span class="pre">Hᵀ</span></code> instead of the standard <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">≈</span> <span class="pre">W</span> <span class="pre">H</span></code>.  This
+guarantees that the returned membership <code class="docutils literal notranslate"><span class="pre">W</span> <span class="pre">=</span> <span class="pre">H</span></code> and features
+<code class="docutils literal notranslate"><span class="pre">H</span> <span class="pre">=</span> <span class="pre">Hᵀ</span></code> are transposes of each other. Accepted <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>
+for the symmetric solver are <code class="docutils literal notranslate"><span class="pre">max_iter</span></code> (default <code class="docutils literal notranslate"><span class="pre">1000</span></code>),
+<code class="docutils literal notranslate"><span class="pre">random_state</span></code> (default <code class="docutils literal notranslate"><span class="pre">0</span></code>), and <code class="docutils literal notranslate"><span class="pre">tol</span></code> (default <code class="docutils literal notranslate"><span class="pre">1e-4</span></code>).
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a>) – Logger object for logging messages.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments passed to <cite>sklearn.decomposition.NMF</cite>
+(standard NMF) or accepted as solver hyper-parameters (symmetric NMF).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>namedtuple containing the optimal number of clusters (n),</dt><dd><p>membership matrix (W) and features matrix (H).  For symmetric
+NMF, <code class="docutils literal notranslate"><span class="pre">W</span></code> is the factor <code class="docutils literal notranslate"><span class="pre">H</span></code> of the <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">≈</span> <span class="pre">H</span> <span class="pre">Hᵀ</span></code>
+decomposition and <code class="docutils literal notranslate"><span class="pre">result.features</span></code> is its transpose, so
+<code class="docutils literal notranslate"><span class="pre">W</span> <span class="pre">&#64;</span> <span class="pre">result.features</span> <span class="pre">≈</span> <span class="pre">A</span></code>.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NicheResult</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="nichefinder.aggregate_neighbors.html" class="btn btn-neutral float-left" title="nichefinder.aggregate_neighbors" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="nichefinder.cell_niche_scores.html" class="btn btn-neutral float-right" title="nichefinder.cell_niche_scores" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, J. Patrick Pett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

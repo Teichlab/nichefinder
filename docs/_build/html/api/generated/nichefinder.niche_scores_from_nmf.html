@@ -1,0 +1,175 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nichefinder.niche_scores_from_nmf &mdash; nichefinder 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css?v=6644e6bb" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="nichefinder.plot_niches" href="nichefinder.plot_niches.html" />
+    <link rel="prev" title="nichefinder.cell_niche_scores" href="nichefinder.cell_niche_scores.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            nichefinder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/example_simulated_data.html">nichefinder — Simulated Data Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/niche_score_mapping.html">nichefinder — Niche Score Mapping</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../gene_selection.html">Gene Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../label_transfer.html">Label Transfer</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../niche_analysis.html">Niche Analysis</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="nichefinder.aggregate_neighbors.html">nichefinder.aggregate_neighbors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nichefinder.find_niches.html">nichefinder.find_niches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nichefinder.cell_niche_scores.html">nichefinder.cell_niche_scores</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">nichefinder.niche_scores_from_nmf</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nichefinder.niche_scores_from_nmf"><code class="docutils literal notranslate"><span class="pre">niche_scores_from_nmf()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="nichefinder.plot_niches.html">nichefinder.plot_niches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nichefinder.plot_aggregated_neighbors.html">nichefinder.plot_aggregated_neighbors</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">nichefinder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../niche_analysis.html">Niche Analysis</a></li>
+      <li class="breadcrumb-item active">nichefinder.niche_scores_from_nmf</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/generated/nichefinder.niche_scores_from_nmf.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="nichefinder-niche-scores-from-nmf">
+<h1>nichefinder.niche_scores_from_nmf<a class="headerlink" href="#nichefinder-niche-scores-from-nmf" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="nichefinder.niche_scores_from_nmf">
+<span class="sig-prename descclassname"><span class="pre">nichefinder.</span></span><span class="sig-name descname"><span class="pre">niche_scores_from_nmf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.spmatrix.html#scipy.sparse.spmatrix" title="(in SciPy v1.17.0)"><span class="pre">spmatrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.spmatrix.html#scipy.sparse.spmatrix" title="(in SciPy v1.17.0)"><span class="pre">spmatrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'out'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'in'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'both'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_C_for_scoring</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_membership</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dataframes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/nichefinder/niche_analysis.html#niche_scores_from_nmf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nichefinder.niche_scores_from_nmf" title="Link to this definition"></a></dt>
+<dd><p>Map NMF niches learned on <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">=</span> <span class="pre">L^T</span> <span class="pre">C</span> <span class="pre">L</span></code> back to per-cell niche scores.</p>
+<p>This function implements the pointwise-product scoring that explicitly captures
+sender/receiver roles from directed NMF factorisations. For undirected NMF
+(symmetric input matrix), consider averaging <code class="docutils literal notranslate"><span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">H.T</span></code> into a single
+<code class="docutils literal notranslate"><span class="pre">S</span></code> matrix and using <a class="reference internal" href="nichefinder.cell_niche_scores.html#nichefinder.cell_niche_scores" title="nichefinder.cell_niche_scores"><code class="xref py py-func docutils literal notranslate"><span class="pre">cell_niche_scores()</span></code></a> instead, or pass
+<code class="docutils literal notranslate"><span class="pre">direction=&quot;both&quot;</span></code> and use <code class="docutils literal notranslate"><span class="pre">S_mem</span></code> as a symmetrised view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>C</strong> (<em>Mat</em>) – (n_cells, n_cells) directed adjacency (i→j if <code class="docutils literal notranslate"><span class="pre">C[i,j]</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>).</p></li>
+<li><p><strong>L</strong> (<em>Mat</em>) – (n_cells, n_types) cell-type probabilities; rows should sum to 1.</p></li>
+<li><p><strong>W</strong> (<em>array-like</em><em> or </em><em>DataFrame</em>) – (n_types, n_niches) — sender-type loadings from NMF.</p></li>
+<li><p><strong>H</strong> (<em>array-like</em><em> or </em><em>DataFrame</em>) – (n_niches, n_types) — receiver-type loadings from NMF.</p></li>
+<li><p><strong>direction</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Which role scores to compute: <code class="docutils literal notranslate"><span class="pre">'out'</span></code> (sender), <code class="docutils literal notranslate"><span class="pre">'in'</span></code>
+(receiver), or <code class="docutils literal notranslate"><span class="pre">'both'</span></code>. Default <code class="docutils literal notranslate"><span class="pre">'out'</span></code>.</p></li>
+<li><p><strong>normalize_C_for_scoring</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Row-normalise <code class="docutils literal notranslate"><span class="pre">C</span></code> before computing scores.
+Default <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>return_membership</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether to compute and return row-normalised
+membership <code class="docutils literal notranslate"><span class="pre">S_mem</span></code>. Default <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Small constant for numerical stability. Default <code class="docutils literal notranslate"><span class="pre">1e-12</span></code>.</p></li>
+<li><p><strong>return_dataframes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Return results as DataFrames. Default <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple of <code class="docutils literal notranslate"><span class="pre">(S_out,</span> <span class="pre">S_in,</span> <span class="pre">S_mem)</span></code> where each element is <code class="docutils literal notranslate"><span class="pre">None</span></code> if not
+requested. <code class="docutils literal notranslate"><span class="pre">S_out</span></code> and <code class="docutils literal notranslate"><span class="pre">S_in</span></code> are (n_cells, n_niches) score matrices.
+<code class="docutils literal notranslate"><span class="pre">S_mem</span></code> is the row-normalised mixture of the requested direction(s).</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Shapes:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">S_out[i,</span> <span class="pre">k]</span></code>: cell <em>i</em> fits niche <em>k</em> as a sender.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">S_in[i,</span> <span class="pre">k]</span></code>:  cell <em>i</em> fits niche <em>k</em> as a receiver.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">S_mem[i,</span> <span class="pre">k]</span></code>: soft niche membership (sums to 1 across niches).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="nichefinder.cell_niche_scores.html" class="btn btn-neutral float-left" title="nichefinder.cell_niche_scores" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="nichefinder.plot_niches.html" class="btn btn-neutral float-right" title="nichefinder.plot_niches" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, J. Patrick Pett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

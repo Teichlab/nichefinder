@@ -1,0 +1,478 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nichefinder.label_transfer &mdash; nichefinder 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css?v=6644e6bb" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            nichefinder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/example_simulated_data.html">nichefinder — Simulated Data Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/niche_score_mapping.html">nichefinder — Niche Score Mapping</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/gene_selection.html">Gene Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/label_transfer.html">Label Transfer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/niche_analysis.html">Niche Analysis</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">nichefinder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">nichefinder.label_transfer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for nichefinder.label_transfer</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">joblib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy_groupies</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npg</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogisticRegression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">adjusted_rand_score</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.utils._testing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ignore_warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConvergenceWarning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassifierMixin</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">scanpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sc</span>
+
+
+<div class="viewcode-block" id="transfer_labels">
+<a class="viewcode-back" href="../../api/generated/nichefinder.transfer_labels.html#nichefinder.transfer_labels">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">transfer_labels</span><span class="p">(</span>
+    <span class="n">suspension</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">AnnData</span><span class="p">,</span>
+    <span class="n">spatial</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">AnnData</span><span class="p">,</span>
+    <span class="n">genes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;cell_type&quot;</span><span class="p">,</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;logreg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;logreg&quot;</span><span class="p">,</span>
+    <span class="n">log</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">),</span>
+    <span class="n">train_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">predict_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sc</span><span class="o">.</span><span class="n">AnnData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Transfer labels from suspension to spatial dataset using a logistic regression model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        suspension (sc.AnnData): Suspension dataset containing cell labels.</span>
+<span class="sd">        spatial (sc.AnnData): Spatial dataset containing gene expression data.</span>
+<span class="sd">        genes (Optional[List[str]]): List of genes to use for label transfer.</span>
+<span class="sd">        labels (Union[str, List[str]]): Name of the column in `suspension.obs` containing labels.</span>
+<span class="sd">        kind (Literal[&#39;logreg&#39;]): Type of label transfer method.</span>
+<span class="sd">        log (logging.Logger): Logger object.</span>
+<span class="sd">        train_kwargs (Optional[dict]): Keyword arguments passed to training function.</span>
+<span class="sd">        predict_kwargs (Optional[dict]): Keyword arguments passed to prediction function.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        sc.AnnData: Spatial dataset with transferred labels.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        TypeError: If an unknown keyword argument is passed depending on `kind`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">labels</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">train_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">train_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">predict_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">predict_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">genes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;subsetting to </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span><span class="si">}</span><span class="s2"> genes&quot;</span><span class="p">)</span>
+        <span class="n">susp</span> <span class="o">=</span> <span class="n">suspension</span><span class="p">[:,</span> <span class="n">genes</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">spat</span> <span class="o">=</span> <span class="n">spatial</span><span class="p">[:,</span> <span class="n">genes</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">susp</span> <span class="o">=</span> <span class="n">suspension</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">spat</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="s2">&quot;label_transfer&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">spatial</span><span class="o">.</span><span class="n">uns</span><span class="p">:</span>
+        <span class="n">spatial</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;label_transfer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;logreg&quot;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;training logistic regression model for </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">_logreg_train</span><span class="p">(</span><span class="n">susp</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="o">**</span><span class="n">train_kwargs</span><span class="p">)</span>
+
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;predicting labels for </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">_logreg_predict</span><span class="p">(</span>
+                    <span class="n">spat</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">key_added</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">return_predict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">predict_kwargs</span>
+                <span class="p">)</span>
+
+                <span class="c1"># add predicted labels to spatial dataset</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;results: </span><span class="si">{</span><span class="n">ret</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;adding predicted labels for </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> to spatial dataset&quot;</span><span class="p">)</span>
+                <span class="n">spatial</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">obs_names</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">spat</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+                <span class="n">spatial</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">_prob&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;prob&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">spatial</span><span class="o">.</span><span class="n">obs_names</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+                <span class="p">)</span>
+                <span class="n">spatial</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;label_transfer&quot;</span><span class="p">][</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;obsm_key&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">_prob&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;prob&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                    <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">,</span>
+                    <span class="s2">&quot;genes&quot;</span><span class="p">:</span> <span class="n">genes</span><span class="p">,</span>
+                    <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">kind</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">train_kwargs</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">predict_kwargs</span><span class="p">,</span>
+                <span class="p">}</span>
+    <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;wrong keyword argument for kind=&#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">spatial</span></div>
+
+
+
+<span class="nd">@ignore_warnings</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="n">ConvergenceWarning</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_logreg_train</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">AnnData</span><span class="p">,</span>
+    <span class="n">groupby</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">use_rep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;raw&quot;</span><span class="p">,</span>
+    <span class="n">use_hvg</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">use_pseudobulk</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">max_pass</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">save</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LogisticRegression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">log</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">),</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LogisticRegression</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train a logistic regression model to predict labels based on gene expression data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        adata (sc.AnnData): Annotated data matrix.</span>
+<span class="sd">        groupby (str): Key in `adata.obs` containing labels.</span>
+<span class="sd">        use_rep (str): Representation of gene expression data to use.</span>
+<span class="sd">        use_hvg (bool): Use highly variable genes.</span>
+<span class="sd">        use_pseudobulk (bool): Use pseudobulk data.</span>
+<span class="sd">        max_pass (int): Maximum number of passes for model convergence.</span>
+<span class="sd">        save (Optional[os.PathLike]): Path to save trained model.</span>
+<span class="sd">        model (Optional[LogisticRegression]): Pre-trained model.</span>
+<span class="sd">        log (logging.Logger): Logger object.</span>
+<span class="sd">        **kwargs: Additional keyword arguments passed to `LogisticRegression`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        LogisticRegression: Trained logistic regression model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">groupby_var</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">groupby</span><span class="p">]</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">remove_unused_categories</span><span class="p">()</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">groupby_var</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_rep</span> <span class="o">==</span> <span class="s2">&quot;raw&quot;</span><span class="p">:</span>
+        <span class="c1"># use raw data attribute</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">X</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">var_names</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">elif</span> <span class="n">use_rep</span> <span class="o">==</span> <span class="s2">&quot;X&quot;</span><span class="p">:</span>
+        <span class="c1"># use X data attribute</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">X</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">var_names</span><span class="o">.</span><span class="n">values</span>
+        <span class="k">if</span> <span class="n">use_hvg</span> <span class="ow">and</span> <span class="s2">&quot;highly_variable&quot;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">k_hvg</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s2">&quot;highly_variable&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">k_hvg</span><span class="p">]</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">k_hvg</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">use_rep</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># use obsm attribute</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="n">use_rep</span><span class="p">]</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;V</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid value for `use_rep`: </span><span class="si">{</span><span class="n">use_rep</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_pseudobulk</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sp</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+            <span class="n">summarised</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Y</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">grp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">groupby_var</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">):</span>
+                <span class="n">k_grp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Y</span> <span class="o">==</span> <span class="n">grp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">summarised</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">k_grp</span><span class="p">,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">summarised</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">npg</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">groupby_var</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">codes</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">groupby_var</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;using provided LR model&quot;</span><span class="p">)</span>
+        <span class="n">lr</span> <span class="o">=</span> <span class="n">model</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;creating new LR model&quot;</span><span class="p">)</span>
+        <span class="n">lr</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span>
+            <span class="n">C</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;saga&quot;</span><span class="p">,</span> <span class="n">warm_start</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+    <span class="n">n_pass</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">n_pass</span> <span class="o">&lt;</span> <span class="n">max_pass</span><span class="p">:</span>
+        <span class="n">lr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="n">n_pass</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">lr</span><span class="o">.</span><span class="n">n_iter_</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;converged after </span><span class="si">{</span><span class="n">n_pass</span><span class="si">}</span><span class="s2"> passes&quot;</span><span class="p">)</span>
+            <span class="k">break</span>
+
+    <span class="k">if</span> <span class="n">lr</span><span class="o">.</span><span class="n">n_iter_</span> <span class="o">&gt;=</span> <span class="mi">100</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;LR model failed to converge&quot;</span><span class="p">)</span>
+
+    <span class="n">lr</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">features</span>
+    <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;saving LR model to </span><span class="si">{</span><span class="n">save</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Path</span><span class="p">(</span><span class="n">save</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">joblib</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="n">save</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">lr</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_logreg_predict</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">AnnData</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">],</span>
+    <span class="n">use_rep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;raw&quot;</span><span class="p">,</span>
+    <span class="n">use_pseudobulk</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">groupby</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">feature</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">key_added</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ground_truth</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">return_predict</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">log</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">),</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Predict labels using a logistic regression model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        adata (sc.AnnData): Annotated data matrix.</span>
+<span class="sd">        model (Union[os.PathLike, ClassifierMixin]): Path to trained model or pre-trained model.</span>
+<span class="sd">        use_rep (str): Representation of gene expression data to use.</span>
+<span class="sd">        use_pseudobulk (Optional[bool]): Use pseudobulk data.</span>
+<span class="sd">        groupby (Optional[str]): Key in `adata.obs` containing labels. Only used if `use_pseudobulk` is True.</span>
+<span class="sd">        feature (Optional[str]): Name of feature in `adata.var` to use.</span>
+<span class="sd">        key_added (Optional[str]): Key to add to `adata.obs`.</span>
+<span class="sd">        ground_truth (Optional[str]): Key in `adata.obs` containing ground truth labels.</span>
+<span class="sd">        return_predict (Optional[bool]): Return prediction results.</span>
+<span class="sd">        log (logging.Logger): Logger object.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Optional[Dict]: Prediction results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">use_rep</span> <span class="o">==</span> <span class="s2">&quot;raw&quot;</span><span class="p">:</span>
+        <span class="c1"># use raw data attribute</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">X</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">var_names</span> <span class="k">if</span> <span class="n">feature</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">adata</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">use_rep</span> <span class="o">==</span> <span class="s2">&quot;X&quot;</span><span class="p">:</span>
+        <span class="c1"># use X data attribute</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">X</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">var_names</span> <span class="k">if</span> <span class="n">feature</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">use_rep</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># use obsm attribute</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="n">use_rep</span><span class="p">]</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;V</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid value for `use_rep`: </span><span class="si">{</span><span class="n">use_rep</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)</span> <span class="ow">and</span> <span class="n">Path</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="n">lr</span> <span class="o">=</span> <span class="n">joblib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">):</span>
+        <span class="n">lr</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid LR model: </span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">lr</span><span class="o">.</span><span class="n">n_features_in_</span> <span class="o">==</span> <span class="n">features</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="n">lr</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">values</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;logistic regression model has no feature names &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;and unmatched size: </span><span class="si">{</span><span class="n">lr</span><span class="o">.</span><span class="n">n_features_in_</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">features</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># find features used in training</span>
+    <span class="n">k_x</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">lr</span><span class="o">.</span><span class="n">features</span><span class="p">))</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k_x</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2"> features used for prediction&quot;</span><span class="p">)</span>
+    <span class="n">k_x_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">k_x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># subset X to only include features used in training</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">k_x_idx</span><span class="p">]</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">k_x</span><span class="p">]</span>
+
+    <span class="n">ad_ft</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ad_features&quot;</span><span class="p">])</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;ad_idx&quot;</span><span class="p">})</span>
+    <span class="p">)</span>
+    <span class="n">lr_ft</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">lr</span><span class="o">.</span><span class="n">features</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;lr_features&quot;</span><span class="p">])</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;lr_idx&quot;</span><span class="p">})</span>
+    <span class="p">)</span>
+    <span class="n">lr_idx</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">lr_ft</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">ad_ft</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="s2">&quot;lr_features&quot;</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s2">&quot;ad_features&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">&quot;ad_idx&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">lr_idx</span><span class="o">.</span><span class="n">values</span>
+    <span class="p">)</span>
+
+    <span class="n">lr</span><span class="o">.</span><span class="n">n_features_in_</span> <span class="o">=</span> <span class="n">lr_idx</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">lr</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">lr</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">lr_idx</span><span class="p">]</span>
+    <span class="n">lr</span><span class="o">.</span><span class="n">coef_</span> <span class="o">=</span> <span class="n">lr</span><span class="o">.</span><span class="n">coef_</span><span class="p">[:,</span> <span class="n">lr_idx</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">use_pseudobulk</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">groupby</span> <span class="ow">or</span> <span class="n">groupby</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;missing or invalid `groupby`&quot;</span><span class="p">)</span>
+        <span class="n">groupby_var</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">groupby</span><span class="p">]</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">remove_unused_categories</span><span class="p">()</span>
+        <span class="n">summarised</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">groupby_var</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">grp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">groupby_var</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">):</span>
+            <span class="n">k_grp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">groupby_var</span> <span class="o">==</span> <span class="n">grp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">sp</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+                <span class="n">summarised</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">k_grp</span><span class="p">,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">summarised</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">k_grp</span><span class="p">,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">summarised</span>
+
+    <span class="n">Y_predict</span> <span class="o">=</span> <span class="n">lr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">Y_prob</span> <span class="o">=</span> <span class="n">lr</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">max_Y_prob</span> <span class="o">=</span> <span class="n">Y_prob</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_pseudobulk</span><span class="p">:</span>
+        <span class="n">tmp_groupby</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">groupby</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">tmp_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">tmp_groupby</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">tmp_predict</span> <span class="o">=</span> <span class="n">tmp_prob</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ct</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">groupby</span><span class="p">]</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">):</span>
+            <span class="n">tmp_prob</span><span class="p">[</span><span class="n">tmp_groupby</span> <span class="o">==</span> <span class="n">ct</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_Y_prob</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">tmp_predict</span><span class="p">[</span><span class="n">tmp_groupby</span> <span class="o">==</span> <span class="n">ct</span><span class="p">]</span> <span class="o">=</span> <span class="n">Y_predict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">max_Y_prob</span> <span class="o">=</span> <span class="n">tmp_prob</span>
+        <span class="n">Y_predict</span> <span class="o">=</span> <span class="n">tmp_predict</span>
+
+    <span class="k">if</span> <span class="n">key_added</span><span class="p">:</span>
+        <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">key_added</span><span class="p">]</span> <span class="o">=</span> <span class="n">Y_predict</span>
+        <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">key_added</span><span class="p">]</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">key_added</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;category&quot;</span><span class="p">)</span>
+        <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_added</span><span class="si">}</span><span class="s2">_prob&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_Y_prob</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;compiling results&quot;</span><span class="p">)</span>
+    <span class="n">use_index</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">groupby</span><span class="p">]</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span> <span class="k">if</span> <span class="n">use_pseudobulk</span> <span class="k">else</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs_names</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">Y_predict</span><span class="p">,</span>
+        <span class="s2">&quot;prob&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="n">Y_prob</span><span class="p">,</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">use_index</span><span class="p">,</span>
+            <span class="n">columns</span><span class="o">=</span><span class="n">lr</span><span class="o">.</span><span class="n">classes_</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">ground_truth</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;computing metrics using ground truth: </span><span class="si">{</span><span class="n">ground_truth</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Y_ground_truth</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">ground_truth</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">Y_predict</span> <span class="o">==</span> <span class="n">Y_ground_truth</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">Y_predict</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;adjusted_rand_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adjusted_rand_score</span><span class="p">(</span><span class="n">Y_ground_truth</span><span class="p">,</span> <span class="n">Y_predict</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_predict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">results</span>
+
+
+<div class="viewcode-block" id="add_prob_to_obs">
+<a class="viewcode-back" href="../../api/generated/nichefinder.add_prob_to_obs.html#nichefinder.add_prob_to_obs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_prob_to_obs</span><span class="p">(</span><span class="n">adata</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">AnnData</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sc</span><span class="o">.</span><span class="n">AnnData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add probabilities saved in `adata.obsm` to `adata.obs`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        adata (sc.AnnData): AnnData object.</span>
+<span class="sd">        key (str): Key in `adata.uns[&quot;label_transfer&quot;]`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">entry</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;label_transfer&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
+    <span class="n">prob_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;obsm_key&quot;</span><span class="p">]],</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">adata</span><span class="o">.</span><span class="n">obs_names</span><span class="p">,</span>
+        <span class="n">columns</span><span class="o">=</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">adata</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span>
+        <span class="n">prob_df</span><span class="p">,</span>
+        <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">adata</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, J. Patrick Pett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

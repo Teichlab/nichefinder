@@ -1,0 +1,550 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nichefinder - Xenium data &mdash; nichefinder 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css?v=6644e6bb" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            nichefinder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="example_simulated_data.html">nichefinder — Simulated Data Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="niche_score_mapping.html">nichefinder — Niche Score Mapping</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/gene_selection.html">Gene Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/label_transfer.html">Label Transfer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/niche_analysis.html">Niche Analysis</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">nichefinder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">nichefinder - Xenium data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/nichefinder_xenium.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="nichefinder-xenium-data">
+<h1>nichefinder - Xenium data<a class="headerlink" href="#nichefinder-xenium-data" title="Link to this heading"></a></h1>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scanpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">nichefinder</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nf</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="load-data">
+<h2>1. Load data<a class="headerlink" href="#load-data" title="Link to this heading"></a></h2>
+<section id="spatial">
+<h3>spatial<a class="headerlink" href="#spatial" title="Link to this heading"></a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">iss_ad</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read_h5ad</span><span class="p">(</span><span class="s2">&quot;../data/C172ii_xenium_matrix.h5ad&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">iss_ad</span><span class="p">,</span> <span class="n">min_genes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">iss_ad</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>AnnData object with n_obs × n_vars = 152411 × 310
+    obs: &#39;cell_id&#39;, &#39;transcript_counts&#39;, &#39;control_probe_counts&#39;, &#39;control_codeword_counts&#39;, &#39;unassigned_codeword_counts&#39;, &#39;deprecated_codeword_counts&#39;, &#39;total_counts&#39;, &#39;cell_area&#39;, &#39;nucleus_area&#39;, &#39;region&#39;, &#39;cell_labels&#39;, &#39;n_genes&#39;
+    var: &#39;gene_ids&#39;, &#39;feature_types&#39;, &#39;genome&#39;
+    uns: &#39;spatialdata_attrs&#39;
+    obsm: &#39;spatial&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">normalize_total</span><span class="p">(</span><span class="n">iss_ad</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">iss_ad</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">iss_ad</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">iss_ad</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">iss_ad</span><span class="o">.</span><span class="n">raw</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(np.float32(0.0), np.float32(5.081404), None)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">iss_ad</span><span class="p">,</span> <span class="n">n_neighbors</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">use_rep</span><span class="o">=</span><span class="s1">&#39;spatial&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/Users/janpatrickpett/miniforge3/envs/nichefinder/lib/python3.11/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
+  from .autonotebook import tqdm as notebook_tqdm
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="suspension-reference">
+<h3>suspension reference<a class="headerlink" href="#suspension-reference" title="Link to this heading"></a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read_h5ad</span><span class="p">(</span><span class="s2">&quot;../data/suspension_subsampled_20Sep24.h5ad&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">iss_ad</span><span class="p">,</span> <span class="n">min_genes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>AnnData object with n_obs × n_vars = 10000 × 34170
+    obs: &#39;run_batch&#39;, &#39;run_id&#39;, &#39;trisomy&#39;, &#39;scrublet_score&#39;, &#39;scrublet_leiden&#39;, &#39;cluster_scrublet_score&#39;, &#39;doublet_pval&#39;, &#39;doublet_bh_pval&#39;, &#39;batch&#39;, &#39;pcw&#39;, &#39;brc_code&#39;, &#39;anatomical_site&#39;, &#39;relative_position&#39;, &#39;percent_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts&#39;, &#39;n_genes&#39;, &#39;n_genes_by_counts&#39;, &#39;total_counts&#39;, &#39;total_counts_mt&#39;, &#39;pct_counts_mt&#39;, &#39;total_counts_ribo&#39;, &#39;pct_counts_ribo&#39;, &#39;total_counts_hb&#39;, &#39;pct_counts_hb&#39;, &#39;QC&#39;, &#39;S_score&#39;, &#39;G2M_score&#39;, &#39;phase&#39;, &#39;batch_key&#39;, &#39;_scvi_batch&#39;, &#39;_scvi_labels&#39;, &#39;leiden_scVI&#39;, &#39;doublet_cls&#39;, &#39;annot_endo&#39;, &#39;annot_stroma&#39;, &#39;annot_schwann&#39;, &#39;annot_immune&#39;, &#39;annot_neuronal&#39;, &#39;annot&#39;, &#39;cell_type_coarse&#39;
+    var: &#39;gene_ids-0&#39;, &#39;gene_ids-1&#39;, &#39;gene_ids-10&#39;, &#39;gene_ids-11&#39;, &#39;gene_ids-12&#39;, &#39;gene_ids-13&#39;, &#39;gene_ids-14&#39;, &#39;gene_ids-15&#39;, &#39;gene_ids-16&#39;, &#39;gene_ids-17&#39;, &#39;gene_ids-18&#39;, &#39;gene_ids-19&#39;, &#39;gene_ids-2&#39;, &#39;gene_ids-20&#39;, &#39;gene_ids-21&#39;, &#39;gene_ids-22&#39;, &#39;gene_ids-23&#39;, &#39;gene_ids-3&#39;, &#39;gene_ids-4&#39;, &#39;gene_ids-5&#39;, &#39;gene_ids-6&#39;, &#39;gene_ids-7&#39;, &#39;gene_ids-8&#39;, &#39;gene_ids-9&#39;, &#39;n_cells&#39;, &#39;mt&#39;, &#39;ribo&#39;, &#39;hb&#39;, &#39;n_cells_by_counts&#39;, &#39;mean_counts&#39;, &#39;pct_dropout_by_counts&#39;, &#39;total_counts&#39;, &#39;highly_variable&#39;, &#39;means&#39;, &#39;dispersions&#39;, &#39;dispersions_norm&#39;, &#39;highly_variable_nbatches&#39;, &#39;highly_variable_intersection&#39;
+    uns: &#39;_scvi_manager_uuid&#39;, &#39;_scvi_uuid&#39;, &#39;anatomical_site_colors&#39;, &#39;annot_colors&#39;, &#39;brc_code_colors&#39;, &#39;cell_type_coarse_colors&#39;, &#39;dendrogram_leiden_scVI&#39;, &#39;doublet_cls_colors&#39;, &#39;hvg&#39;, &#39;leiden&#39;, &#39;leiden_scVI_colors&#39;, &#39;log1p&#39;, &#39;neighbors&#39;, &#39;phase_colors&#39;, &#39;rank_genes_groups&#39;, &#39;relative_position_colors&#39;, &#39;run_id_colors&#39;, &#39;trisomy_colors&#39;, &#39;umap&#39;
+    obsm: &#39;X_pca&#39;, &#39;X_scVI&#39;, &#39;X_umap&#39;, &#39;X_umap_scVI&#39;, &#39;_scvi_extra_categorical_covs&#39;, &#39;_scvi_extra_continuous_covs&#39;
+    obsp: &#39;connectivities&#39;, &#39;distances&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">ad</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">ad</span><span class="o">.</span><span class="n">raw</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(np.float32(0.0), np.float32(8.310645), None)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="select-highly-variable-genes-hvgs">
+<h2>2. Select highly variable genes (HVGs)<a class="headerlink" href="#select-highly-variable-genes-hvgs" title="Link to this heading"></a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gene_sel</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">select_genes</span><span class="p">(</span>
+    <span class="n">suspension</span><span class="o">=</span><span class="n">ad</span><span class="p">,</span>
+    <span class="n">spatial</span><span class="o">=</span><span class="n">iss_ad</span><span class="p">,</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;hvg&#39;</span><span class="p">,</span>
+    <span class="n">min_disp</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:nichefinder.gene_selection:select 310 overlapping genes
+INFO:nichefinder.gene_selection:select highly variable genes for suspension data
+INFO:nichefinder.gene_selection:  &gt; number of HVG in suspension: 93
+INFO:nichefinder.gene_selection:select highly variable genes for spatial data
+INFO:nichefinder.gene_selection:  &gt; number of HVG in spatial: 111
+INFO:nichefinder.gene_selection:number of selected genes: 46
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">gene_sel</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>46
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="transfer-labels">
+<h2>3) Transfer labels<a class="headerlink" href="#transfer-labels" title="Link to this heading"></a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">iss_ad</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">transfer_labels</span><span class="p">(</span>
+    <span class="n">suspension</span><span class="o">=</span><span class="n">ad</span><span class="p">,</span>
+    <span class="n">spatial</span><span class="o">=</span><span class="n">iss_ad</span><span class="p">,</span>
+    <span class="n">genes</span><span class="o">=</span><span class="n">gene_sel</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;cell_type_coarse&#39;</span><span class="p">,</span>
+    <span class="n">train_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">use_rep</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">),</span>
+    <span class="n">predict_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">use_rep</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:nichefinder.label_transfer:subsetting to 46 genes
+INFO:nichefinder.label_transfer:training logistic regression model for cell_type_coarse
+INFO:nichefinder.label_transfer:predicting labels for cell_type_coarse
+INFO:nichefinder.label_transfer:46 features used for prediction
+INFO:nichefinder.label_transfer:compiling results
+INFO:nichefinder.label_transfer:adding predicted labels for cell_type_coarse to spatial dataset
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nf</span><span class="o">.</span><span class="n">add_prob_to_obs</span><span class="p">(</span><span class="n">iss_ad</span><span class="p">,</span> <span class="s1">&#39;cell_type_coarse&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>AnnData object with n_obs × n_vars = 152411 × 310
+    obs: &#39;cell_id&#39;, &#39;transcript_counts&#39;, &#39;control_probe_counts&#39;, &#39;control_codeword_counts&#39;, &#39;unassigned_codeword_counts&#39;, &#39;deprecated_codeword_counts&#39;, &#39;total_counts&#39;, &#39;cell_area&#39;, &#39;nucleus_area&#39;, &#39;region&#39;, &#39;cell_labels&#39;, &#39;n_genes&#39;, &#39;annot&#39;, &#39;ASTROCYTE&#39;, &#39;Arach_FIB&#39;, &#39;Art_EC1&#39;, &#39;Art_EC2&#39;, &#39;BBB_EC1&#39;, &#39;BBB_EC2&#39;, &#39;CYCLING_GLIOBLAST&#39;, &#39;CYCLING_PRE_ASTROCYTE&#39;, &#39;CYCLING_RG&#39;, &#39;Cycling_FIB&#39;, &#39;Cycling_SCP&#39;, &#39;DC&#39;, &#39;Dura_FIB1&#39;, &#39;Dura_FIB2&#39;, &#39;Early_ERY&#39;, &#39;Early_MK&#39;, &#39;Eo/Baso&#39;, &#39;GLIOBLAST&#39;, &#39;Immature_B&#39;, &#39;Late_ERY&#39;, &#39;Late_MK&#39;, &#39;MP_LYVE1+&#39;, &#39;MP_LYVE1+_FOLR2+&#39;, &#39;MP_LYVE1+_ICAM1&#39;, &#39;MP_LYVE1+_cycling&#39;, &#39;Mast&#39;, &#39;Mid_ERY&#39;, &#39;Mono&#39;, &#39;Myo_FIB&#39;, &#39;NEUROBLAST_1&#39;, &#39;NEUROBLAST_2&#39;, &#39;NEURON&#39;, &#39;OC&#39;, &#39;PERI1&#39;, &#39;PERI2&#39;, &#39;PRE_ASTROCYTE&#39;, &#39;Pia_FIB1&#39;, &#39;Pia_FIB2&#39;, &#39;Plasma_B&#39;, &#39;Pre_B&#39;, &#39;Pre_OB&#39;, &#39;Pre_Pro_B&#39;, &#39;Pro_B&#39;, &#39;RG&#39;, &#39;SCHWANN&#39;, &#39;SCP&#39;, &#39;Satellite_GLIA&#39;, &#39;T/NK&#39;, &#39;Ven_EC1&#39;, &#39;Ven_EC2&#39;, &#39;YS_ERY&#39;, &#39;cell_type_coarse&#39;, &#39;BLOOD/IMMUNE&#39;, &#39;ENDO&#39;, &#39;NEU&#39;, &#39;SCW&#39;, &#39;STROMAL&#39;
+    var: &#39;gene_ids&#39;, &#39;feature_types&#39;, &#39;genome&#39;
+    uns: &#39;spatialdata_attrs&#39;, &#39;log1p&#39;, &#39;neighbors&#39;, &#39;label_transfer&#39;, &#39;annot_colors&#39;
+    obsm: &#39;spatial&#39;, &#39;annot_prob&#39;, &#39;cell_type_coarse_prob&#39;
+    obsp: &#39;distances&#39;, &#39;connectivities&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<section id="plot-labels">
+<h3>plot labels<a class="headerlink" href="#plot-labels" title="Link to this heading"></a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">spatial</span><span class="p">(</span><span class="n">iss_ad</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;cell_type_coarse&#39;</span><span class="p">,</span> <span class="n">spot_size</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/var/folders/m2/myty8yy51jbgyp19lgf5zsmh0000gn/T/ipykernel_70627/526340235.py:1: FutureWarning: Use `squidpy.pl.spatial_scatter` instead.
+  sc.pl.spatial(iss_ad, color=&#39;cell_type_coarse&#39;, spot_size=20)
+</pre></div>
+</div>
+<img alt="../_images/512537c74705dabafd9f6e3d097fba5d77a9d04b5dc9bdd4c225f5989d0e12bc.png" src="../_images/512537c74705dabafd9f6e3d097fba5d77a9d04b5dc9bdd4c225f5989d0e12bc.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">plt</span><span class="o">.</span><span class="n">rc_context</span><span class="p">({</span><span class="s1">&#39;axes.facecolor&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">}):</span>
+    <span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">spatial</span><span class="p">(</span><span class="n">iss_ad</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Pia_FIB1&#39;</span><span class="p">,</span> <span class="s1">&#39;Dura_FIB1&#39;</span><span class="p">,</span> <span class="s1">&#39;Arach_FIB&#39;</span><span class="p">],</span> <span class="n">spot_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="s2">&quot;p99&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/var/folders/m2/myty8yy51jbgyp19lgf5zsmh0000gn/T/ipykernel_70627/2980743314.py:2: FutureWarning: Use `squidpy.pl.spatial_scatter` instead.
+  sc.pl.spatial(iss_ad, color=[&#39;Pia_FIB1&#39;, &#39;Dura_FIB1&#39;, &#39;Arach_FIB&#39;], spot_size=20, vmax=&quot;p99&quot;)
+</pre></div>
+</div>
+<img alt="../_images/90dd047bdc0dd63ff7a05f96077c29bdced55f8eee115a57624afff4deafec1c.png" src="../_images/90dd047bdc0dd63ff7a05f96077c29bdced55f8eee115a57624afff4deafec1c.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="analyse-niches">
+<h2>4) Analyse niches<a class="headerlink" href="#analyse-niches" title="Link to this heading"></a></h2>
+<section id="aggregate-neighborhoods">
+<h3>aggregate neighborhoods<a class="headerlink" href="#aggregate-neighborhoods" title="Link to this heading"></a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">agg_prob</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">aggregate_neighbors</span><span class="p">(</span>
+    <span class="n">spatial</span><span class="o">=</span><span class="n">iss_ad</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s1">&#39;cell_type_coarse&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sns</span><span class="o">.</span><span class="n">clustermap</span><span class="p">(</span><span class="n">agg_prob</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">15</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;seaborn.matrix.ClusterGrid at 0x34e7d8b10&gt;
+</pre></div>
+</div>
+<img alt="../_images/fa88cecebcc05932da515e5326ff35e9cff786db241435f566878f13930efeb9.png" src="../_images/fa88cecebcc05932da515e5326ff35e9cff786db241435f566878f13930efeb9.png" />
+</div>
+</div>
+</section>
+<section id="find-niches">
+<h3>find niches<a class="headerlink" href="#find-niches" title="Link to this heading"></a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">find_niches</span><span class="p">(</span>
+    <span class="n">agg_prob</span><span class="p">,</span>
+    <span class="n">plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">n_clusters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_clusters</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">return_dataframes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selected number of niches: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># symmetrize the factors into a single membership matrix</span>
+<span class="n">S</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">symmetrise_nmf_factors</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">H</span><span class="p">)</span>
+<span class="n">niche_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;niche_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">n</span><span class="p">)]</span>
+<span class="n">membership</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">agg_prob</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">niche_names</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Membership matrix (cell-types x niches):&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">membership</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:nichefinder.niche_analysis:calculate reconstruction errors for 8 clusters
+/Users/janpatrickpett/miniforge3/envs/nichefinder/lib/python3.11/site-packages/sklearn/decomposition/_nmf.py:124: RuntimeWarning: invalid value encountered in sqrt
+  return np.sqrt(res * 2)
+/Users/janpatrickpett/miniforge3/envs/nichefinder/lib/python3.11/site-packages/sklearn/decomposition/_nmf.py:124: RuntimeWarning: invalid value encountered in sqrt
+  return np.sqrt(res * 2)
+INFO:nichefinder.niche_analysis:selected optimal number of clusters: 3
+INFO:nichefinder.niche_analysis:ploting reconstruction error
+</pre></div>
+</div>
+<img alt="../_images/d2856f2149d686c537cd3dc27254d01f48054fbc0ca3c88050dd1dcf381e79a7.png" src="../_images/d2856f2149d686c537cd3dc27254d01f48054fbc0ca3c88050dd1dcf381e79a7.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Selected number of niches: 3
+Membership matrix (cell-types x niches):
+</pre></div>
+</div>
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>niche_0</th>
+      <th>niche_1</th>
+      <th>niche_2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>BLOOD/IMMUNE</th>
+      <td>0.302194</td>
+      <td>0.083523</td>
+      <td>0.052061</td>
+    </tr>
+    <tr>
+      <th>ENDO</th>
+      <td>0.022250</td>
+      <td>0.644211</td>
+      <td>0.357425</td>
+    </tr>
+    <tr>
+      <th>NEU</th>
+      <td>0.276154</td>
+      <td>0.109662</td>
+      <td>0.000000</td>
+    </tr>
+    <tr>
+      <th>SCW</th>
+      <td>0.255938</td>
+      <td>0.126854</td>
+      <td>0.133670</td>
+    </tr>
+    <tr>
+      <th>STROMAL</th>
+      <td>0.143465</td>
+      <td>0.035749</td>
+      <td>0.456844</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+</section>
+<section id="plot-niches">
+<h3>plot niches<a class="headerlink" href="#plot-niches" title="Link to this heading"></a></h3>
+<section id="niches-as-graph-with-cutoff">
+<h4>niches as graph with cutoff<a class="headerlink" href="#niches-as-graph-with-cutoff" title="Link to this heading"></a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">plt</span><span class="o">.</span><span class="n">rc_context</span><span class="p">({</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">8</span><span class="p">)}):</span>
+    <span class="n">nf</span><span class="o">.</span><span class="n">plot_niches</span><span class="p">(</span>
+        <span class="n">membership</span><span class="o">=</span><span class="n">membership</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="o">=</span><span class="mf">0.03</span><span class="p">,</span>
+        <span class="n">scale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">edge_width_scale</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/f9bd2e4c818ac4e6d79dcbc228df0a162cf3e062820dc56be78a7d6b40569ad1.png" src="../_images/f9bd2e4c818ac4e6d79dcbc228df0a162cf3e062820dc56be78a7d6b40569ad1.png" />
+</div>
+</div>
+</section>
+<section id="niches-as-heatmap">
+<h4>niches as heatmap<a class="headerlink" href="#niches-as-heatmap" title="Link to this heading"></a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sns</span><span class="o">.</span><span class="n">clustermap</span><span class="p">(</span><span class="n">membership</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;seaborn.matrix.ClusterGrid at 0x363f65c50&gt;
+</pre></div>
+</div>
+<img alt="../_images/8de9e9a0aa70761d81113712d8298fdcef48dd64dab4505c2b5e54f5b640cae8.png" src="../_images/8de9e9a0aa70761d81113712d8298fdcef48dd64dab4505c2b5e54f5b640cae8.png" />
+</div>
+</div>
+</section>
+<section id="niches-next-to-clustered-matrix-of-aggregated-neighbors">
+<h4>niches next to clustered matrix of aggregated neighbors<a class="headerlink" href="#niches-next-to-clustered-matrix-of-aggregated-neighbors" title="Link to this heading"></a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nf</span><span class="o">.</span><span class="n">plot_aggregated_neighbors</span><span class="p">(</span>
+    <span class="n">agg_prob</span><span class="p">,</span> 
+    <span class="n">membership</span><span class="p">,</span> 
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">14</span><span class="p">),</span>
+    <span class="n">colors_ratio</span><span class="o">=</span><span class="mf">.0125</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/3fe25db39990b94a3e50a8249ee2afb03b2436ba2b05fe063c78dcdd73e08256.png" src="../_images/3fe25db39990b94a3e50a8249ee2afb03b2436ba2b05fe063c78dcdd73e08256.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, J. Patrick Pett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

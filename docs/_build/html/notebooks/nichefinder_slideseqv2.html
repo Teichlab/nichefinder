@@ -1,0 +1,1280 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nichefinder - Slide-seqV2 data &mdash; nichefinder 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css?v=6644e6bb" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            nichefinder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="example_simulated_data.html">nichefinder — Simulated Data Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="niche_score_mapping.html">nichefinder — Niche Score Mapping</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/gene_selection.html">Gene Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/label_transfer.html">Label Transfer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/niche_analysis.html">Niche Analysis</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">nichefinder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">nichefinder - Slide-seqV2 data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/nichefinder_slideseqv2.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="nichefinder-slide-seqv2-data">
+<h1>nichefinder - Slide-seqV2 data<a class="headerlink" href="#nichefinder-slide-seqv2-data" title="Link to this heading"></a></h1>
+<p>This notebook demonstrates the nichefinder analysis pipeline on the Slide-seqV2 mouse hippocampus dataset, loaded directly via squidpy. Label transfer is performed from a matched scRNA-seq mouse cortex reference dataset.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scanpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">squidpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sq</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;../..&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">nichefinder</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nf</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/Users/janpatrickpett/miniforge3/envs/nichefinder/lib/python3.11/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
+  from .autonotebook import tqdm as notebook_tqdm
+</pre></div>
+</div>
+</div>
+</div>
+<section id="load-data">
+<h2>1. Load data<a class="headerlink" href="#load-data" title="Link to this heading"></a></h2>
+<section id="spatial-slide-seqv2-mouse-hippocampus">
+<h3>Spatial: Slide-seqV2 mouse hippocampus<a class="headerlink" href="#spatial-slide-seqv2-mouse-hippocampus" title="Link to this heading"></a></h3>
+<p>The Slide-seqV2 dataset contains spatial transcriptomics data from the mouse hippocampus. Cell type annotations are stored in <code class="docutils literal notranslate"><span class="pre">obs['cell_type']</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">spatial_ad</span> <span class="o">=</span> <span class="n">sq</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">slideseqv2</span><span class="p">()</span>
+<span class="n">spatial_ad</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>AnnData object with n_obs × n_vars = 41786 × 4000
+    obs: &#39;barcode&#39;, &#39;x&#39;, &#39;y&#39;, &#39;n_genes_by_counts&#39;, &#39;log1p_n_genes_by_counts&#39;, &#39;total_counts&#39;, &#39;log1p_total_counts&#39;, &#39;pct_counts_in_top_50_genes&#39;, &#39;pct_counts_in_top_100_genes&#39;, &#39;pct_counts_in_top_200_genes&#39;, &#39;pct_counts_in_top_500_genes&#39;, &#39;total_counts_MT&#39;, &#39;log1p_total_counts_MT&#39;, &#39;pct_counts_MT&#39;, &#39;n_counts&#39;, &#39;leiden&#39;, &#39;cluster&#39;
+    var: &#39;MT&#39;, &#39;n_cells_by_counts&#39;, &#39;mean_counts&#39;, &#39;log1p_mean_counts&#39;, &#39;pct_dropout_by_counts&#39;, &#39;total_counts&#39;, &#39;log1p_total_counts&#39;, &#39;n_cells&#39;, &#39;highly_variable&#39;, &#39;highly_variable_rank&#39;, &#39;means&#39;, &#39;variances&#39;, &#39;variances_norm&#39;
+    uns: &#39;cluster_colors&#39;, &#39;hvg&#39;, &#39;leiden&#39;, &#39;leiden_colors&#39;, &#39;neighbors&#39;, &#39;pca&#39;, &#39;spatial_neighbors&#39;, &#39;umap&#39;
+    obsm: &#39;X_pca&#39;, &#39;X_umap&#39;, &#39;deconvolution_results&#39;, &#39;spatial&#39;
+    varm: &#39;PCs&#39;
+    obsp: &#39;connectivities&#39;, &#39;distances&#39;, &#39;spatial_connectivities&#39;, &#39;spatial_distances&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inspect available cell types</span>
+<span class="n">spatial_ad</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s2">&quot;cluster&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>cluster
+CA1_CA2_CA3_Subiculum       7649
+DentatePyramids             6606
+Astrocytes                  6543
+Interneurons                3672
+Oligodendrocytes            3602
+Subiculum_Entorhinal_cl2    2896
+Endothelial_Stalk           1991
+Subiculum_Entorhinal_cl3    1985
+Polydendrocytes             1449
+Endothelial_Tip             1317
+Microglia                   1298
+Mural                       1027
+Neurogenesis                 938
+Ependymal                    813
+Name: count, dtype: int64
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">spatial_ad</span> <span class="o">=</span> <span class="n">spatial_ad</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">to_adata</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">spatial_ad</span><span class="p">,</span> <span class="n">min_genes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_genes</span><span class="p">(</span><span class="n">spatial_ad</span><span class="p">,</span> <span class="n">min_cells</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">spatial_ad</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(np.float32(0.0), np.float32(5.3497987))
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">normalize_total</span><span class="p">(</span><span class="n">spatial_ad</span><span class="p">,</span> <span class="n">target_sum</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">spatial_ad</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">spatial_ad</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(np.float32(0.0), np.float32(6.4916754))
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span> <span class="o">=</span> <span class="n">spatial_ad</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;cell_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;cluster&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="k">del</span> <span class="n">ad</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;cluster&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">tl</span><span class="o">.</span><span class="n">rank_genes_groups</span><span class="p">(</span><span class="n">ad</span><span class="p">,</span> <span class="n">groupby</span><span class="o">=</span><span class="s2">&quot;cell_type&quot;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;wilcoxon&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dedf</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">get</span><span class="o">.</span><span class="n">rank_genes_groups_df</span><span class="p">(</span><span class="n">ad</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dedf</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;pvals_adj &lt; 0.001&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;group&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/var/folders/m2/myty8yy51jbgyp19lgf5zsmh0000gn/T/ipykernel_193/3668611210.py:1: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  dedf.query(&quot;pvals_adj &lt; 0.001&quot;).groupby(&quot;group&quot;).size()
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>group
+Astrocytes                  2959
+CA1_CA2_CA3_Subiculum       3037
+DentatePyramids              373
+Endothelial_Stalk            512
+Endothelial_Tip              221
+Ependymal                    862
+Interneurons                 519
+Microglia                    385
+Mural                        149
+Neurogenesis                  24
+Oligodendrocytes            1318
+Polydendrocytes              367
+Subiculum_Entorhinal_cl2     892
+Subiculum_Entorhinal_cl3     497
+dtype: int64
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">gene_panel</span> <span class="o">=</span> <span class="n">dedf</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;pvals_adj &lt; 0.001&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;group&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;scores&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">))[</span><span class="s2">&quot;names&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+<span class="n">all_genes</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">var_names</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="n">n_random</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">gene_panel</span><span class="p">))</span>
+<span class="n">random_genes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">all_genes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">gene_panel</span><span class="p">)),</span> <span class="n">n_random</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">gene_panel</span> <span class="o">=</span> <span class="n">gene_panel</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">random_genes</span><span class="p">)</span>
+
+<span class="nb">len</span><span class="p">(</span><span class="n">gene_panel</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/var/folders/m2/myty8yy51jbgyp19lgf5zsmh0000gn/T/ipykernel_193/865354753.py:3: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  gene_panel = dedf.query(&quot;pvals_adj &lt; 0.001&quot;).groupby(&quot;group&quot;).apply(lambda df: df.sort_values(&quot;scores&quot;, ascending=False).head(10))[&quot;names&quot;].unique().tolist()
+/var/folders/m2/myty8yy51jbgyp19lgf5zsmh0000gn/T/ipykernel_193/865354753.py:3: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  gene_panel = dedf.query(&quot;pvals_adj &lt; 0.001&quot;).groupby(&quot;group&quot;).apply(lambda df: df.sort_values(&quot;scores&quot;, ascending=False).head(10))[&quot;names&quot;].unique().tolist()
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>237
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cells_susp</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+<span class="n">cells_spat</span> <span class="o">=</span> <span class="p">{</span><span class="n">g</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">ad</span><span class="o">.</span><span class="n">obs_names</span> <span class="k">if</span> <span class="n">g</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cells_susp</span><span class="p">}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cells suspension: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cells_susp</span><span class="p">)</span><span class="si">}</span><span class="s2"> cells spatial: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cells_spat</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>cells suspension: 10446 cells spatial: 31340
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">spatial_ad</span> <span class="o">=</span> <span class="n">spatial_ad</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">cells_spat</span><span class="p">),</span> <span class="n">gene_panel</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span> <span class="o">=</span> <span class="n">ad</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">cells_susp</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build spatial neighbor graph from 2D coordinates</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">spatial_ad</span><span class="p">,</span> <span class="n">n_neighbors</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">use_rep</span><span class="o">=</span><span class="s2">&quot;spatial&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(10446, 12837)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(31340, 237)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="reference-scrna-seq-mouse-cortex">
+<h3>Reference: scRNA-seq mouse cortex<a class="headerlink" href="#reference-scrna-seq-mouse-cortex" title="Link to this heading"></a></h3>
+<p>Pre-processed scRNA-seq mouse cortex from Zeisel et al. 2018 (~3k cells, cell types in <code class="docutils literal notranslate"><span class="pre">obs['cell_type']</span></code>), used as reference for label transfer.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span> <span class="o">=</span> <span class="n">sq</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">sc_mouse_cortex</span><span class="p">()</span>
+<span class="n">ad</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>AnnData object with n_obs × n_vars = 21697 × 36826
+    obs: &#39;sample_name&#39;, &#39;organism&#39;, &#39;donor_sex&#39;, &#39;cell_class&#39;, &#39;cell_subclass&#39;, &#39;cell_cluster&#39;, &#39;n_genes_by_counts&#39;, &#39;log1p_n_genes_by_counts&#39;, &#39;total_counts&#39;, &#39;log1p_total_counts&#39;, &#39;pct_counts_in_top_50_genes&#39;, &#39;pct_counts_in_top_100_genes&#39;, &#39;pct_counts_in_top_200_genes&#39;, &#39;pct_counts_in_top_500_genes&#39;, &#39;total_counts_mt&#39;, &#39;log1p_total_counts_mt&#39;, &#39;pct_counts_mt&#39;, &#39;n_counts&#39;
+    var: &#39;mt&#39;, &#39;n_cells_by_counts&#39;, &#39;mean_counts&#39;, &#39;log1p_mean_counts&#39;, &#39;pct_dropout_by_counts&#39;, &#39;total_counts&#39;, &#39;log1p_total_counts&#39;, &#39;n_cells&#39;, &#39;highly_variable&#39;, &#39;highly_variable_rank&#39;, &#39;means&#39;, &#39;variances&#39;, &#39;variances_norm&#39;
+    uns: &#39;cell_class_colors&#39;, &#39;cell_subclass_colors&#39;, &#39;hvg&#39;, &#39;neighbors&#39;, &#39;pca&#39;, &#39;umap&#39;
+    obsm: &#39;X_pca&#39;, &#39;X_umap&#39;
+    varm: &#39;PCs&#39;
+    obsp: &#39;connectivities&#39;, &#39;distances&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">X</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_genes</span><span class="p">(</span><span class="n">ad</span><span class="p">,</span> <span class="n">min_cells</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">ad</span><span class="p">,</span> <span class="n">min_genes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">normalize_total</span><span class="p">(</span><span class="n">ad</span><span class="p">,</span> <span class="n">target_sum</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">ad</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">ad</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">ad</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(np.float32(0.0), np.float32(8.004929), np.float32(399744.0))
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ad</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s2">&quot;cell_subclass&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>cell_subclass
+L5 IT         2952
+Vip           2645
+Sst           2534
+L6 IT         2166
+Pvalb         2065
+Lamp5         1837
+L4            1340
+L6 CT         1220
+L2/3 IT       1172
+L5 PT          895
+NP             733
+Astro          545
+L6b            457
+Sncg           244
+Oligo          185
+Endo           155
+VLMC           131
+Macrophage     131
+SMC            106
+Serpinf1        84
+Meis2           55
+Peri            28
+CR              17
+Name: count, dtype: int64
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="gene-selection">
+<h2>2. Gene selection<a class="headerlink" href="#gene-selection" title="Link to this heading"></a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gene_sel</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">select_genes</span><span class="p">(</span>
+    <span class="n">suspension</span><span class="o">=</span><span class="n">ad</span><span class="p">,</span>
+    <span class="n">spatial</span><span class="o">=</span><span class="n">spatial_ad</span><span class="p">,</span>
+    <span class="n">kind_susp</span><span class="o">=</span><span class="s2">&quot;hvg&quot;</span><span class="p">,</span>
+    <span class="n">kind_spat</span><span class="o">=</span><span class="s2">&quot;hvg&quot;</span><span class="p">,</span>
+    <span class="c1"># min_disp=0.01,</span>
+    <span class="n">n_top_genes</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">gene_sel</span><span class="p">)</span><span class="si">}</span><span class="s2"> genes&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:nichefinder.gene_selection:select 237 overlapping genes
+INFO:nichefinder.gene_selection:select highly variable genes for suspension data
+INFO:nichefinder.gene_selection:  &gt; number of HVG in suspension: 200
+INFO:nichefinder.gene_selection:select highly variable genes for spatial data
+INFO:nichefinder.gene_selection:  &gt; number of HVG in spatial: 200
+INFO:nichefinder.gene_selection:number of selected genes: 186
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Selected 186 genes
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="label-transfer">
+<h2>3. Label transfer<a class="headerlink" href="#label-transfer" title="Link to this heading"></a></h2>
+<p>Transfer cell type labels from the scRNA-seq reference to the MERFISH spatial data.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">spatial_ad</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">transfer_labels</span><span class="p">(</span>
+    <span class="n">suspension</span><span class="o">=</span><span class="n">ad</span><span class="p">,</span>
+    <span class="n">spatial</span><span class="o">=</span><span class="n">spatial_ad</span><span class="p">,</span>
+    <span class="n">genes</span><span class="o">=</span><span class="n">gene_sel</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s2">&quot;cell_type&quot;</span><span class="p">,</span>
+    <span class="n">train_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">use_rep</span><span class="o">=</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="n">class_weight</span><span class="o">=</span><span class="s2">&quot;balanced&quot;</span><span class="p">),</span>
+    <span class="n">predict_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">use_rep</span><span class="o">=</span><span class="s2">&quot;X&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:nichefinder.label_transfer:subsetting to 186 genes
+INFO:nichefinder.label_transfer:training logistic regression model for cell_type
+INFO:nichefinder.label_transfer:predicting labels for cell_type
+INFO:nichefinder.label_transfer:186 features used for prediction
+INFO:nichefinder.label_transfer:compiling results
+INFO:nichefinder.label_transfer:adding predicted labels for cell_type to spatial dataset
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nf</span><span class="o">.</span><span class="n">add_prob_to_obs</span><span class="p">(</span><span class="n">spatial_ad</span><span class="p">,</span> <span class="s2">&quot;cell_type&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">MergeError</span><span class="g g-Whitespace">                                </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">118</span><span class="p">],</span> <span class="n">line</span> <span class="mi">1</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="n">nf</span><span class="o">.</span><span class="n">add_prob_to_obs</span><span class="p">(</span><span class="n">spatial_ad</span><span class="p">,</span> <span class="s2">&quot;cell_type&quot;</span><span class="p">)</span>
+
+<span class="nn">File ~/miniforge3/envs/nichefinder/lib/python3.11/site-packages/nichefinder/label_transfer.py:353,</span> in <span class="ni">add_prob_to_obs</span><span class="nt">(adata, key)</span>
+<span class="g g-Whitespace">    </span><span class="mi">347</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;label_transfer&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
+<span class="g g-Whitespace">    </span><span class="mi">348</span> <span class="n">prob_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">349</span>     <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;obsm_key&quot;</span><span class="p">]],</span>
+<span class="g g-Whitespace">    </span><span class="mi">350</span>     <span class="n">index</span><span class="o">=</span><span class="n">adata</span><span class="o">.</span><span class="n">obs_names</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">351</span>     <span class="n">columns</span><span class="o">=</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">],</span>
+<span class="g g-Whitespace">    </span><span class="mi">352</span> <span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">353</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">354</span>     <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">355</span>     <span class="n">prob_df</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">356</span>     <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">357</span>     <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">358</span> <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">359</span> <span class="k">return</span> <span class="n">adata</span>
+
+<span class="nn">File ~/miniforge3/envs/nichefinder/lib/python3.11/site-packages/pandas/core/reshape/merge.py:184,</span> in <span class="ni">merge</span><span class="nt">(left, right, how, on, left_on, right_on, left_index, right_index, sort, suffixes, copy, indicator, validate)</span>
+<span class="g g-Whitespace">    </span><span class="mi">169</span> <span class="k">else</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">170</span>     <span class="n">op</span> <span class="o">=</span> <span class="n">_MergeOperation</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">171</span>         <span class="n">left_df</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">172</span>         <span class="n">right_df</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">182</span>         <span class="n">validate</span><span class="o">=</span><span class="n">validate</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">183</span>     <span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">184</span>     <span class="k">return</span> <span class="n">op</span><span class="o">.</span><span class="n">get_result</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">)</span>
+
+<span class="nn">File ~/miniforge3/envs/nichefinder/lib/python3.11/site-packages/pandas/core/reshape/merge.py:888,</span> in <span class="ni">_MergeOperation.get_result</span><span class="nt">(self, copy)</span>
+<span class="g g-Whitespace">    </span><span class="mi">884</span>     <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicator_pre_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">886</span> <span class="n">join_index</span><span class="p">,</span> <span class="n">left_indexer</span><span class="p">,</span> <span class="n">right_indexer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_join_info</span><span class="p">()</span>
+<span class="ne">--&gt; </span><span class="mi">888</span> <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reindex_and_concat</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">889</span>     <span class="n">join_index</span><span class="p">,</span> <span class="n">left_indexer</span><span class="p">,</span> <span class="n">right_indexer</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="n">copy</span>
+<span class="g g-Whitespace">    </span><span class="mi">890</span> <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">891</span> <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">__finalize__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_merge_type</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">893</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indicator</span><span class="p">:</span>
+
+<span class="nn">File ~/miniforge3/envs/nichefinder/lib/python3.11/site-packages/pandas/core/reshape/merge.py:840,</span> in <span class="ni">_MergeOperation._reindex_and_concat</span><span class="nt">(self, join_index, left_indexer, right_indexer, copy)</span>
+<span class="g g-Whitespace">    </span><span class="mi">837</span> <span class="n">left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">[:]</span>
+<span class="g g-Whitespace">    </span><span class="mi">838</span> <span class="n">right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">[:]</span>
+<span class="ne">--&gt; </span><span class="mi">840</span> <span class="n">llabels</span><span class="p">,</span> <span class="n">rlabels</span> <span class="o">=</span> <span class="n">_items_overlap_with_suffix</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">841</span>     <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">_info_axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">_info_axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">suffixes</span>
+<span class="g g-Whitespace">    </span><span class="mi">842</span> <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">844</span> <span class="k">if</span> <span class="n">left_indexer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_range_indexer</span><span class="p">(</span><span class="n">left_indexer</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="p">)):</span>
+<span class="g g-Whitespace">    </span><span class="mi">845</span>     <span class="c1"># Pinning the index here (and in the right code just below) is not</span>
+<span class="g g-Whitespace">    </span><span class="mi">846</span>     <span class="c1">#  necessary, but makes the `.take` more performant if we have e.g.</span>
+<span class="g g-Whitespace">    </span><span class="mi">847</span>     <span class="c1">#  a MultiIndex for left.index.</span>
+<span class="g g-Whitespace">    </span><span class="mi">848</span>     <span class="n">lmgr</span> <span class="o">=</span> <span class="n">left</span><span class="o">.</span><span class="n">_mgr</span><span class="o">.</span><span class="n">reindex_indexer</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">849</span>         <span class="n">join_index</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">850</span>         <span class="n">left_indexer</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">855</span>         <span class="n">use_na_proxy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">856</span>     <span class="p">)</span>
+
+<span class="nn">File ~/miniforge3/envs/nichefinder/lib/python3.11/site-packages/pandas/core/reshape/merge.py:2757,</span> in <span class="ni">_items_overlap_with_suffix</span><span class="nt">(left, right, suffixes)</span>
+<span class="g g-Whitespace">   </span><span class="mi">2755</span>     <span class="n">dups</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">rlabels</span><span class="p">[(</span><span class="n">rlabels</span><span class="o">.</span><span class="n">duplicated</span><span class="p">())</span> <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">right</span><span class="o">.</span><span class="n">duplicated</span><span class="p">())]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+<span class="g g-Whitespace">   </span><span class="mi">2756</span> <span class="k">if</span> <span class="n">dups</span><span class="p">:</span>
+<span class="ne">-&gt; </span><span class="mi">2757</span>     <span class="k">raise</span> <span class="n">MergeError</span><span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">2758</span>         <span class="sa">f</span><span class="s2">&quot;Passing &#39;suffixes&#39; which cause duplicate columns </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">dups</span><span class="p">)</span><span class="si">}</span><span class="s2"> is &quot;</span>
+<span class="g g-Whitespace">   </span><span class="mi">2759</span>         <span class="sa">f</span><span class="s2">&quot;not allowed.&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">   </span><span class="mi">2760</span>     <span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">2762</span> <span class="k">return</span> <span class="n">llabels</span><span class="p">,</span> <span class="n">rlabels</span>
+
+<span class="ne">MergeError</span>: Passing &#39;suffixes&#39; which cause duplicate columns {&#39;Endothelial_Stalk_x&#39;, &#39;Polydendrocytes_x&#39;, &#39;Microglia_x&#39;, &#39;Neurogenesis_x&#39;, &#39;CA1_CA2_CA3_Subiculum_x&#39;, &#39;Oligodendrocytes_x&#39;, &#39;Astrocytes_x&#39;, &#39;Endothelial_Tip_x&#39;, &#39;Subiculum_Entorhinal_cl3_x&#39;, &#39;Interneurons_x&#39;, &#39;Ependymal_x&#39;, &#39;DentatePyramids_x&#39;, &#39;Mural_x&#39;, &#39;Subiculum_Entorhinal_cl2_x&#39;} is not allowed.
+</pre></div>
+</div>
+</div>
+</div>
+<section id="plot-transferred-labels">
+<h3>Plot transferred labels<a class="headerlink" href="#plot-transferred-labels" title="Link to this heading"></a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">ListedColormap</span>
+
+<span class="n">sq</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">spatial_scatter</span><span class="p">(</span>
+    <span class="n">spatial_ad</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;cell_type&quot;</span><span class="p">,</span>
+    <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">palette</span><span class="o">=</span><span class="n">ListedColormap</span><span class="p">(</span><span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">palettes</span><span class="o">.</span><span class="n">default_28</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>... storing &#39;cell_type&#39; as categorical
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING: Please specify a valid `library_id` or set it permanently in `adata.uns[&#39;spatial&#39;]`
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/Users/janpatrickpett/miniforge3/envs/nichefinder/lib/python3.11/site-packages/squidpy/pl/_spatial_utils.py:982: UserWarning: No data for colormapping provided via &#39;c&#39;. Parameters &#39;cmap&#39;, &#39;norm&#39; will be ignored
+  _cax = scatter(
+</pre></div>
+</div>
+<img alt="../_images/b9b67c4a3f7c4a1257f2478abb0c340797ad0218aa0066f4aa705c37aced9eae.png" src="../_images/b9b67c4a3f7c4a1257f2478abb0c340797ad0218aa0066f4aa705c37aced9eae.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sq</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">spatial_scatter</span><span class="p">(</span>
+    <span class="n">spatial_ad</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span>
+    <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">palette</span><span class="o">=</span><span class="n">ListedColormap</span><span class="p">(</span><span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">palettes</span><span class="o">.</span><span class="n">default_28</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING: Please specify a valid `library_id` or set it permanently in `adata.uns[&#39;spatial&#39;]`
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/Users/janpatrickpett/miniforge3/envs/nichefinder/lib/python3.11/site-packages/squidpy/pl/_spatial_utils.py:982: UserWarning: No data for colormapping provided via &#39;c&#39;. Parameters &#39;cmap&#39;, &#39;norm&#39; will be ignored
+  _cax = scatter(
+</pre></div>
+</div>
+<img alt="../_images/1b2c1b6a69b9f57dffebba3fd8bb6619c3d5a3efc9b0ef80e49c34d2c6f2ec3e.png" src="../_images/1b2c1b6a69b9f57dffebba3fd8bb6619c3d5a3efc9b0ef80e49c34d2c6f2ec3e.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Crosstab between transferred cell_subclass and original Cell_class labels</span>
+<span class="n">ct</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s2">&quot;cell_type&quot;</span><span class="p">],</span> <span class="n">spatial_ad</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s2">&quot;cluster&quot;</span><span class="p">])</span>
+<span class="n">ct_norm</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="n">s</span><span class="o">-</span><span class="n">s</span><span class="o">.</span><span class="n">min</span><span class="p">())</span><span class="o">/</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">-</span><span class="n">s</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">ct_norm</span><span class="p">,</span> <span class="n">annot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Crosstab: transferred cell_type vs original cluster&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;cluster&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;cell_type&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/815a0af8d425f4c675e8453d04d017d48f17b1e42799ed1d56b376063d70df07.png" src="../_images/815a0af8d425f4c675e8453d04d017d48f17b1e42799ed1d56b376063d70df07.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="niche-analysis">
+<h2>4. Niche analysis<a class="headerlink" href="#niche-analysis" title="Link to this heading"></a></h2>
+<section id="aggregate-neighborhoods">
+<h3>Aggregate neighborhoods<a class="headerlink" href="#aggregate-neighborhoods" title="Link to this heading"></a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">agg_prob</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">aggregate_neighbors</span><span class="p">(</span>
+    <span class="n">spatial</span><span class="o">=</span><span class="n">spatial_ad</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;cell_type&quot;</span><span class="p">,</span>
+    <span class="n">scale</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sns</span><span class="o">.</span><span class="n">clustermap</span><span class="p">(</span><span class="n">agg_prob</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;seaborn.matrix.ClusterGrid at 0x3b1fba9d0&gt;
+</pre></div>
+</div>
+<img alt="../_images/c21bf971a4a5a500abbfb3564b17fd37a6b98c341e8b0fc4472c59aff8a40b51.png" src="../_images/c21bf971a4a5a500abbfb3564b17fd37a6b98c341e8b0fc4472c59aff8a40b51.png" />
+</div>
+</div>
+</section>
+<section id="find-niches">
+<h3>Find niches<a class="headerlink" href="#find-niches" title="Link to this heading"></a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">find_niches</span><span class="p">(</span>
+    <span class="n">agg_prob</span><span class="p">,</span>
+    <span class="n">plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">n_clusters</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">max_clusters</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+    <span class="n">return_dataframes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selected number of niches: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Symmetrize the factors into a single membership matrix</span>
+<span class="n">S</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">symmetrise_nmf_factors</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">H</span><span class="p">)</span>
+<span class="n">niche_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;niche_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">n</span><span class="p">)]</span>
+<span class="n">membership</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">agg_prob</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">niche_names</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Membership matrix (cell-types x niches):&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">membership</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:nichefinder.niche_analysis:calculate reconstruction errors for 12 clusters
+INFO:nichefinder.niche_analysis:ploting reconstruction error
+</pre></div>
+</div>
+<img alt="../_images/45848c71fe8457f8b7dff98f3afa39a598e5ea7e7a80c862436f97cb6df27593.png" src="../_images/45848c71fe8457f8b7dff98f3afa39a598e5ea7e7a80c862436f97cb6df27593.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Selected number of niches: 8
+Membership matrix (cell-types x niches):
+</pre></div>
+</div>
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>niche_0</th>
+      <th>niche_1</th>
+      <th>niche_2</th>
+      <th>niche_3</th>
+      <th>niche_4</th>
+      <th>niche_5</th>
+      <th>niche_6</th>
+      <th>niche_7</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Astrocytes</th>
+      <td>0.127169</td>
+      <td>0.051149</td>
+      <td>0.025470</td>
+      <td>0.036321</td>
+      <td>0.086571</td>
+      <td>0.035838</td>
+      <td>0.150171</td>
+      <td>0.028389</td>
+    </tr>
+    <tr>
+      <th>CA1_CA2_CA3_Subiculum</th>
+      <td>0.011017</td>
+      <td>0.061820</td>
+      <td>0.059566</td>
+      <td>0.201090</td>
+      <td>0.000000</td>
+      <td>0.031199</td>
+      <td>0.060270</td>
+      <td>0.029958</td>
+    </tr>
+    <tr>
+      <th>DentatePyramids</th>
+      <td>0.050082</td>
+      <td>0.054507</td>
+      <td>0.051260</td>
+      <td>0.150923</td>
+      <td>0.035865</td>
+      <td>0.043319</td>
+      <td>0.089370</td>
+      <td>0.013080</td>
+    </tr>
+    <tr>
+      <th>Endothelial_Stalk</th>
+      <td>0.104620</td>
+      <td>0.059747</td>
+      <td>0.048956</td>
+      <td>0.046945</td>
+      <td>0.075148</td>
+      <td>0.071384</td>
+      <td>0.099954</td>
+      <td>0.079240</td>
+    </tr>
+    <tr>
+      <th>Endothelial_Tip</th>
+      <td>0.144654</td>
+      <td>0.014894</td>
+      <td>0.116399</td>
+      <td>0.021253</td>
+      <td>0.020064</td>
+      <td>0.028868</td>
+      <td>0.033686</td>
+      <td>0.237246</td>
+    </tr>
+    <tr>
+      <th>Ependymal</th>
+      <td>0.065343</td>
+      <td>0.014980</td>
+      <td>0.351719</td>
+      <td>0.000000</td>
+      <td>0.047036</td>
+      <td>0.000143</td>
+      <td>0.004484</td>
+      <td>0.127613</td>
+    </tr>
+    <tr>
+      <th>Interneurons</th>
+      <td>0.029271</td>
+      <td>0.057244</td>
+      <td>0.060407</td>
+      <td>0.068786</td>
+      <td>0.038988</td>
+      <td>0.205691</td>
+      <td>0.154866</td>
+      <td>0.063706</td>
+    </tr>
+    <tr>
+      <th>Microglia</th>
+      <td>0.113806</td>
+      <td>0.070536</td>
+      <td>0.039518</td>
+      <td>0.047774</td>
+      <td>0.090522</td>
+      <td>0.035306</td>
+      <td>0.113192</td>
+      <td>0.028592</td>
+    </tr>
+    <tr>
+      <th>Mural</th>
+      <td>0.113507</td>
+      <td>0.052643</td>
+      <td>0.036416</td>
+      <td>0.050517</td>
+      <td>0.063579</td>
+      <td>0.069571</td>
+      <td>0.109345</td>
+      <td>0.077262</td>
+    </tr>
+    <tr>
+      <th>Neurogenesis</th>
+      <td>0.063283</td>
+      <td>0.080501</td>
+      <td>0.065103</td>
+      <td>0.088693</td>
+      <td>0.094748</td>
+      <td>0.022694</td>
+      <td>0.088085</td>
+      <td>0.040995</td>
+    </tr>
+    <tr>
+      <th>Oligodendrocytes</th>
+      <td>0.000335</td>
+      <td>0.211653</td>
+      <td>0.003710</td>
+      <td>0.000000</td>
+      <td>0.235028</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.190682</td>
+    </tr>
+    <tr>
+      <th>Polydendrocytes</th>
+      <td>0.060293</td>
+      <td>0.128550</td>
+      <td>0.037729</td>
+      <td>0.044081</td>
+      <td>0.127944</td>
+      <td>0.056922</td>
+      <td>0.074667</td>
+      <td>0.082050</td>
+    </tr>
+    <tr>
+      <th>Subiculum_Entorhinal_cl2</th>
+      <td>0.054958</td>
+      <td>0.007963</td>
+      <td>0.042413</td>
+      <td>0.140338</td>
+      <td>0.084463</td>
+      <td>0.208335</td>
+      <td>0.013030</td>
+      <td>0.000000</td>
+    </tr>
+    <tr>
+      <th>Subiculum_Entorhinal_cl3</th>
+      <td>0.061662</td>
+      <td>0.133814</td>
+      <td>0.061334</td>
+      <td>0.103280</td>
+      <td>0.000043</td>
+      <td>0.190730</td>
+      <td>0.008879</td>
+      <td>0.001188</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+</section>
+<section id="plot-niches">
+<h3>Plot niches<a class="headerlink" href="#plot-niches" title="Link to this heading"></a></h3>
+<section id="niches-as-bipartite-graph">
+<h4>Niches as bipartite graph<a class="headerlink" href="#niches-as-bipartite-graph" title="Link to this heading"></a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">plt</span><span class="o">.</span><span class="n">rc_context</span><span class="p">({</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">)}):</span>
+    <span class="n">nf</span><span class="o">.</span><span class="n">plot_niches</span><span class="p">(</span>
+        <span class="n">membership</span><span class="o">=</span><span class="n">membership</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">scale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">edge_width_scale</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/4ff72e3853cce88b36ae6a00365c0374b6f6709af77fa54b9f7eab21bd5a6596.png" src="../_images/4ff72e3853cce88b36ae6a00365c0374b6f6709af77fa54b9f7eab21bd5a6596.png" />
+</div>
+</div>
+</section>
+<section id="niches-as-heatmap">
+<h4>Niches as heatmap<a class="headerlink" href="#niches-as-heatmap" title="Link to this heading"></a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sns</span><span class="o">.</span><span class="n">clustermap</span><span class="p">(</span><span class="n">membership</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;seaborn.matrix.ClusterGrid at 0x393492710&gt;
+</pre></div>
+</div>
+<img alt="../_images/67fb2acb4973faba2bc66ef1f760b5ba6eb0fdfe8c17bb9f2aea5981b52bed42.png" src="../_images/67fb2acb4973faba2bc66ef1f760b5ba6eb0fdfe8c17bb9f2aea5981b52bed42.png" />
+</div>
+</div>
+</section>
+<section id="niches-next-to-clustered-aggregated-neighbor-matrix">
+<h4>Niches next to clustered aggregated neighbor matrix<a class="headerlink" href="#niches-next-to-clustered-aggregated-neighbor-matrix" title="Link to this heading"></a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nf</span><span class="o">.</span><span class="n">plot_aggregated_neighbors</span><span class="p">(</span>
+    <span class="n">agg_prob</span><span class="p">,</span>
+    <span class="n">membership</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>
+    <span class="n">colors_ratio</span><span class="o">=</span><span class="mf">0.0125</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/5edaaf9d9d00422c9f104dd149feb50e7cd27c80990b44e898b2f3b094c6a27b.png" src="../_images/5edaaf9d9d00422c9f104dd149feb50e7cd27c80990b44e898b2f3b094c6a27b.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="map-niches-back-to-cells">
+<h3>Map niches back to cells<a class="headerlink" href="#map-niches-back-to-cells" title="Link to this heading"></a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">W_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">agg_prob</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">niche_names</span><span class="p">)</span>
+<span class="n">H_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">H</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">niche_names</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">agg_prob</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+<span class="n">scores</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">cell_niche_scores</span><span class="p">(</span>
+    <span class="n">adjacency</span><span class="o">=</span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">obsp</span><span class="p">[</span><span class="s2">&quot;connectivities&quot;</span><span class="p">],</span>
+    <span class="n">L</span><span class="o">=</span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;label_transfer&quot;</span><span class="p">][</span><span class="s2">&quot;cell_type&quot;</span><span class="p">][</span><span class="s2">&quot;obsm_key&quot;</span><span class="p">]],</span>
+    <span class="n">W</span><span class="o">=</span><span class="n">W_df</span><span class="p">,</span>
+    <span class="n">H</span><span class="o">=</span><span class="n">H_df</span><span class="p">,</span>
+    <span class="n">cell_index</span><span class="o">=</span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">obs_names</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;geometric&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">spatial_ad</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s2">&quot;niche_scores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">values</span>
+<span class="n">scores</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>niche_0</th>
+      <th>niche_1</th>
+      <th>niche_2</th>
+      <th>niche_3</th>
+      <th>niche_4</th>
+      <th>niche_5</th>
+      <th>niche_6</th>
+      <th>niche_7</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>CGAGAGTGTGCCTA</th>
+      <td>0.047549</td>
+      <td>0.054332</td>
+      <td>0.032602</td>
+      <td>0.079659</td>
+      <td>0.048458</td>
+      <td>0.090433</td>
+      <td>0.060472</td>
+      <td>0.039234</td>
+    </tr>
+    <tr>
+      <th>GCATGCCTATACTT</th>
+      <td>0.019698</td>
+      <td>0.016148</td>
+      <td>0.019055</td>
+      <td>0.070775</td>
+      <td>0.011216</td>
+      <td>0.049754</td>
+      <td>0.037434</td>
+      <td>0.009136</td>
+    </tr>
+    <tr>
+      <th>AGTTCCATACGCCT</th>
+      <td>0.070078</td>
+      <td>0.038299</td>
+      <td>0.048917</td>
+      <td>0.069936</td>
+      <td>0.040716</td>
+      <td>0.070348</td>
+      <td>0.074940</td>
+      <td>0.044181</td>
+    </tr>
+    <tr>
+      <th>GGGTACAACCACAA</th>
+      <td>0.055071</td>
+      <td>0.030321</td>
+      <td>0.032067</td>
+      <td>0.065906</td>
+      <td>0.033581</td>
+      <td>0.083622</td>
+      <td>0.064674</td>
+      <td>0.028524</td>
+    </tr>
+    <tr>
+      <th>CCTAATGCGCGCCA</th>
+      <td>0.071748</td>
+      <td>0.044547</td>
+      <td>0.035340</td>
+      <td>0.051764</td>
+      <td>0.043426</td>
+      <td>0.049252</td>
+      <td>0.083195</td>
+      <td>0.041939</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualize per-cell niche scores spatially</span>
+<span class="n">spatial_ad</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">niche_names</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">values</span>
+
+<span class="n">sq</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">spatial_scatter</span><span class="p">(</span>
+    <span class="n">spatial_ad</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="n">niche_names</span><span class="p">,</span>
+    <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Reds&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING: Please specify a valid `library_id` or set it permanently in `adata.uns[&#39;spatial&#39;]`
+</pre></div>
+</div>
+<img alt="../_images/d63358775de5e082a1b3d62d80afe5991482c587ffbb169b2e1cbb41adb1f2da.png" src="../_images/d63358775de5e082a1b3d62d80afe5991482c587ffbb169b2e1cbb41adb1f2da.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">W_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">agg_prob</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">niche_names</span><span class="p">)</span>
+<span class="n">H_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">H</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">niche_names</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">agg_prob</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+<span class="n">scores</span> <span class="o">=</span> <span class="n">nf</span><span class="o">.</span><span class="n">cell_niche_scores</span><span class="p">(</span>
+    <span class="n">adjacency</span><span class="o">=</span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">obsp</span><span class="p">[</span><span class="s2">&quot;connectivities&quot;</span><span class="p">],</span>
+    <span class="n">L</span><span class="o">=</span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;label_transfer&quot;</span><span class="p">][</span><span class="s2">&quot;cell_type&quot;</span><span class="p">][</span><span class="s2">&quot;obsm_key&quot;</span><span class="p">]],</span>
+    <span class="n">W</span><span class="o">=</span><span class="n">W_df</span><span class="p">,</span>
+    <span class="n">H</span><span class="o">=</span><span class="n">H_df</span><span class="p">,</span>
+    <span class="n">cell_index</span><span class="o">=</span><span class="n">spatial_ad</span><span class="o">.</span><span class="n">obs_names</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;geometric&quot;</span><span class="p">,</span>
+    <span class="n">s_sharpen</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+    <span class="n">n_smooth_iter</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">spatial_ad</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s2">&quot;niche_scores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">values</span>
+<span class="n">spatial_ad</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s2">&quot;niche_label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">niche_label</span>
+<span class="n">scores</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>niche_0</th>
+      <th>niche_1</th>
+      <th>niche_2</th>
+      <th>niche_3</th>
+      <th>niche_4</th>
+      <th>niche_5</th>
+      <th>niche_6</th>
+      <th>niche_7</th>
+      <th>niche_label</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>CGAGAGTGTGCCTA</th>
+      <td>0.045196</td>
+      <td>0.052986</td>
+      <td>0.016004</td>
+      <td>0.094412</td>
+      <td>0.048709</td>
+      <td>0.116669</td>
+      <td>0.064496</td>
+      <td>0.035219</td>
+      <td>niche_5</td>
+    </tr>
+    <tr>
+      <th>GCATGCCTATACTT</th>
+      <td>0.015199</td>
+      <td>0.007377</td>
+      <td>0.009134</td>
+      <td>0.118745</td>
+      <td>0.004960</td>
+      <td>0.063803</td>
+      <td>0.037793</td>
+      <td>0.004844</td>
+      <td>niche_3</td>
+    </tr>
+    <tr>
+      <th>AGTTCCATACGCCT</th>
+      <td>0.075066</td>
+      <td>0.023858</td>
+      <td>0.033920</td>
+      <td>0.071468</td>
+      <td>0.024261</td>
+      <td>0.067272</td>
+      <td>0.076418</td>
+      <td>0.037460</td>
+      <td>niche_6</td>
+    </tr>
+    <tr>
+      <th>GGGTACAACCACAA</th>
+      <td>0.056838</td>
+      <td>0.018121</td>
+      <td>0.015700</td>
+      <td>0.066871</td>
+      <td>0.018741</td>
+      <td>0.103802</td>
+      <td>0.071968</td>
+      <td>0.023042</td>
+      <td>niche_5</td>
+    </tr>
+    <tr>
+      <th>CCTAATGCGCGCCA</th>
+      <td>0.083879</td>
+      <td>0.030284</td>
+      <td>0.018435</td>
+      <td>0.043041</td>
+      <td>0.028958</td>
+      <td>0.039059</td>
+      <td>0.092153</td>
+      <td>0.036229</td>
+      <td>niche_6</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sq</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">spatial_scatter</span><span class="p">(</span>
+    <span class="n">spatial_ad</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;niche_label&quot;</span><span class="p">,</span>
+    <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Reds&quot;</span><span class="p">,</span>
+    <span class="n">palette</span><span class="o">=</span><span class="n">ListedColormap</span><span class="p">(</span><span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">palettes</span><span class="o">.</span><span class="n">default_28</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>... storing &#39;niche_label&#39; as categorical
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING: Please specify a valid `library_id` or set it permanently in `adata.uns[&#39;spatial&#39;]`
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/Users/janpatrickpett/miniforge3/envs/nichefinder/lib/python3.11/site-packages/squidpy/pl/_spatial_utils.py:982: UserWarning: No data for colormapping provided via &#39;c&#39;. Parameters &#39;cmap&#39;, &#39;norm&#39; will be ignored
+  _cax = scatter(
+</pre></div>
+</div>
+<img alt="../_images/9b888b802575793a44522eb41ee3a7d12de4253b4a13d6e5bc234cfc04aac2ca.png" src="../_images/9b888b802575793a44522eb41ee3a7d12de4253b4a13d6e5bc234cfc04aac2ca.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, J. Patrick Pett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

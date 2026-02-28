@@ -8,4 +8,7 @@ from .niche_analysis import (
     find_niches,
     plot_niches,
     plot_aggregated_neighbors,
+    niche_scores_from_nmf,
+    cell_niche_scores,
+    symmetrise_nmf_factors,
 )

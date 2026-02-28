@@ -1,0 +1,1165 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nichefinder.niche_analysis &mdash; nichefinder 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css?v=6644e6bb" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            nichefinder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/example_simulated_data.html">nichefinder — Simulated Data Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/niche_score_mapping.html">nichefinder — Niche Score Mapping</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/gene_selection.html">Gene Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/label_transfer.html">Label Transfer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/niche_analysis.html">Niche Analysis</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">nichefinder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">nichefinder.niche_analysis</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for nichefinder.niche_analysis</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scanpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.sparse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.cluster.hierarchy</span><span class="w"> </span><span class="kn">import</span> <span class="n">linkage</span><span class="p">,</span> <span class="n">leaves_list</span><span class="p">,</span> <span class="n">optimal_leaf_ordering</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.decomposition</span><span class="w"> </span><span class="kn">import</span> <span class="n">NMF</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+
+<span class="n">NicheResult</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;NicheResult&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="s2">&quot;W&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">])</span>
+
+<span class="n">Mat</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">spmatrix</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_row_norm</span><span class="p">(</span><span class="n">C</span><span class="p">:</span> <span class="n">Mat</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-12</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Row-normalise a matrix (dense or sparse).&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">C</span><span class="p">):</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">tocsr</span><span class="p">()</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="n">rs</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">inv</span><span class="p">[</span><span class="n">nz</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">rs</span><span class="p">[</span><span class="n">nz</span><span class="p">]</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">diags</span><span class="p">(</span><span class="n">inv</span><span class="p">)</span> <span class="o">@</span> <span class="n">C</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">rs</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">rs</span> <span class="o">+</span> <span class="n">eps</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">C</span><span class="p">),</span> <span class="n">where</span><span class="o">=</span><span class="n">rs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_col_norm</span><span class="p">(</span><span class="n">C</span><span class="p">:</span> <span class="n">Mat</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-12</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Column-normalise a matrix (dense or sparse).&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">C</span><span class="p">):</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">tocsc</span><span class="p">()</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="n">cs</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">inv</span><span class="p">[</span><span class="n">nz</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">cs</span><span class="p">[</span><span class="n">nz</span><span class="p">]</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">C</span> <span class="o">@</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">diags</span><span class="p">(</span><span class="n">inv</span><span class="p">)</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">cs</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">cs</span> <span class="o">+</span> <span class="n">eps</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">C</span><span class="p">),</span> <span class="n">where</span><span class="o">=</span><span class="n">cs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_dense</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert sparse or array-like to a dense float numpy array.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span> <span class="k">if</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="k">else</span> <span class="n">X</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="aggregate_neighbors">
+<a class="viewcode-back" href="../../api/generated/nichefinder.aggregate_neighbors.html#nichefinder.aggregate_neighbors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">aggregate_neighbors</span><span class="p">(</span>
+    <span class="n">spatial</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">AnnData</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;expected&quot;</span><span class="p">,</span> <span class="s2">&quot;expected_no_diag&quot;</span><span class="p">],</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;expected&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Aggregate spatial neighbors based on cell type labels.</span>
+<span class="sd">    The labels are provided as a matrix of cell type probabilities.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spatial (sc.AnnData): Spatial dataset containing spatial neighbors.</span>
+<span class="sd">        label (str): Label with key in `spatial.uns[&#39;label_transfer&#39;]` containing label probabilities.</span>
+<span class="sd">        scale (Optional[Union[Literal[&#39;expected&#39;, &#39;expected_no_diag&#39;], float]]): Controls how aggregated</span>
+<span class="sd">            spatial neighbors are scaled by the expected number of connections between cell types.</span>
+<span class="sd">            ``&#39;expected&#39;`` uses the full random-rewiring baseline (``exclude_diagonal=0.0``).</span>
+<span class="sd">            ``&#39;expected_no_diag&#39;`` fully removes self-connections from the background</span>
+<span class="sd">            (``exclude_diagonal=1.0``).</span>
+<span class="sd">            A float in ``[0, 1]`` sets the diagonal exclusion fraction continuously.</span>
+<span class="sd">            ``None`` skips scaling. Default is ``&#39;expected&#39;``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: Aggregated spatial neighbors as a cell-type × cell-type DataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">label_prob</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="n">spatial</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;label_transfer&quot;</span><span class="p">][</span><span class="n">label</span><span class="p">][</span><span class="s2">&quot;obsm_key&quot;</span><span class="p">]]</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;label_transfer&quot;</span><span class="p">][</span><span class="n">label</span><span class="p">][</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span>
+
+    <span class="n">aggregated</span> <span class="o">=</span> <span class="n">label_prob</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">spatial</span><span class="o">.</span><span class="n">obsp</span><span class="p">[</span><span class="s2">&quot;connectivities&quot;</span><span class="p">]</span> <span class="o">@</span> <span class="n">label_prob</span>
+    <span class="n">aggregated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">aggregated</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">scale</span> <span class="o">==</span> <span class="s2">&quot;expected&quot;</span><span class="p">:</span>
+        <span class="n">aggregated</span> <span class="o">=</span> <span class="n">_scale_by_expectation</span><span class="p">(</span><span class="n">aggregated</span><span class="p">,</span> <span class="n">exclude_diagonal</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">scale</span> <span class="o">==</span> <span class="s2">&quot;expected_no_diag&quot;</span><span class="p">:</span>
+        <span class="n">aggregated</span> <span class="o">=</span> <span class="n">_scale_by_expectation</span><span class="p">(</span><span class="n">aggregated</span><span class="p">,</span> <span class="n">exclude_diagonal</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">and</span> <span class="n">scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span> <span class="ow">and</span> <span class="n">scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">aggregated</span> <span class="o">=</span> <span class="n">_scale_by_expectation</span><span class="p">(</span><span class="n">aggregated</span><span class="p">,</span> <span class="n">exclude_diagonal</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">scale</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">aggregated</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_scale_by_expectation</span><span class="p">(</span>
+    <span class="n">aggregated</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">exclude_diagonal</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scale aggregated spatial neighbors by the expected number of connections between cell types.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        aggregated (np.ndarray): Aggregated spatial neighbors.</span>
+<span class="sd">        exclude_diagonal (float): Value in ``[0, 1]`` controlling how much of the diagonal is</span>
+<span class="sd">            excluded when estimating the random-rewiring background.</span>
+<span class="sd">            ``0.0`` keeps the full diagonal in the background (no exclusion).</span>
+<span class="sd">            ``1.0`` fully removes self-connections from the background, which increases</span>
+<span class="sd">            enrichment scores for cell types in homogeneous spatial regions.</span>
+<span class="sd">            Intermediate values interpolate continuously between the two extremes.</span>
+<span class="sd">            ``True``/``False`` are accepted and coerce to ``1.0``/``0.0``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Normalised aggregated spatial neighbors.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If ``exclude_diagonal`` is outside ``[0, 1]``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exclude_diagonal</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">exclude_diagonal</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">exclude_diagonal</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;exclude_diagonal must be a value between 0 and 1.&quot;</span><span class="p">)</span>
+
+    <span class="n">agg</span> <span class="o">=</span> <span class="n">aggregated</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Proportionally subtract diagonal from background-estimation copy</span>
+    <span class="k">if</span> <span class="n">exclude_diagonal</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">agg</span><span class="p">)</span>
+        <span class="n">agg</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">diag</span> <span class="o">*</span> <span class="n">exclude_diagonal</span><span class="p">)</span>
+
+    <span class="c1"># Estimate label probabilities from (partially) diagonal-excluded matrix</span>
+    <span class="n">label_prob</span> <span class="o">=</span> <span class="n">agg</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">label_prob</span> <span class="o">/=</span> <span class="n">label_prob</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="c1"># Calculate expected connections based on overall label frequencies</span>
+    <span class="n">agg_rand</span> <span class="o">=</span> <span class="n">aggregated</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">label_prob</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Interpolate diagonal of agg_rand between random expectation and observed</span>
+    <span class="n">agg_rand</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">diag_indices_from</span><span class="p">(</span><span class="n">agg_rand</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span>
+        <span class="n">exclude_diagonal</span> <span class="o">*</span> <span class="n">aggregated</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">exclude_diagonal</span><span class="p">)</span> <span class="o">*</span> <span class="n">agg_rand</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">aggregated</span> <span class="o">/</span> <span class="n">agg_rand</span>
+
+
+<div class="viewcode-block" id="find_niches">
+<a class="viewcode-back" href="../../api/generated/nichefinder.find_niches.html#nichefinder.find_niches">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_niches</span><span class="p">(</span>
+    <span class="n">neighbors</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">],</span>
+    <span class="n">max_clusters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">n_clusters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">plot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">return_dataframes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">symmetric</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">log</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">),</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NicheResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find niches in spatial neighbors using non-negative matrix factorization (NMF).</span>
+<span class="sd">    The optimal number of clusters (up to `max_clusters`) is automatically determined using the elbow point method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        neighbors (Union[pd.DataFrame, sp.sparse.csr_matrix]): Aggregated spatial neighbors.</span>
+<span class="sd">        max_clusters (int): Maximum number of clusters for NMF.</span>
+<span class="sd">        n_clusters (Optional[int]): Number of clusters for NMF. If None, the optimal number is determined automatically.</span>
+<span class="sd">        plot (bool): Plot the reconstruction error curve.</span>
+<span class="sd">        labels (Optional[List[str]]): Cell type labels. Provide if `neighbors` is not a DataFrame.</span>
+<span class="sd">        return_dataframes (bool): Return the results as DataFrames instead of matrices.</span>
+<span class="sd">        symmetric (bool): Run symmetric NMF (SymNMF) which factorises the neighbour</span>
+<span class="sd">            matrix as ``A ≈ H Hᵀ`` instead of the standard ``A ≈ W H``.  This</span>
+<span class="sd">            guarantees that the returned membership ``W = H`` and features</span>
+<span class="sd">            ``H = Hᵀ`` are transposes of each other. Accepted ``kwargs``</span>
+<span class="sd">            for the symmetric solver are ``max_iter`` (default ``1000``),</span>
+<span class="sd">            ``random_state`` (default ``0``), and ``tol`` (default ``1e-4``).</span>
+<span class="sd">            Default ``False``.</span>
+<span class="sd">        log (logging.Logger): Logger object for logging messages.</span>
+<span class="sd">        **kwargs: Additional keyword arguments passed to `sklearn.decomposition.NMF`</span>
+<span class="sd">            (standard NMF) or accepted as solver hyper-parameters (symmetric NMF).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        NicheResult: namedtuple containing the optimal number of clusters (n),</span>
+<span class="sd">                     membership matrix (W) and features matrix (H).  For symmetric</span>
+<span class="sd">                     NMF, ``W`` is the factor ``H`` of the ``A ≈ H Hᵀ``</span>
+<span class="sd">                     decomposition and ``result.features`` is its transpose, so</span>
+<span class="sd">                     ``W @ result.features ≈ A``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">neighbors</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">nmat</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">neighbors</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nmat</span> <span class="o">=</span> <span class="n">neighbors</span>
+
+    <span class="k">if</span> <span class="n">n_clusters</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">plot</span><span class="p">:</span>
+        <span class="c1"># Calculate reconstruction errors for different cluster numbers</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;calculate reconstruction errors for </span><span class="si">{</span><span class="n">max_clusters</span><span class="si">}</span><span class="s2"> clusters&quot;</span><span class="p">)</span>
+        <span class="n">errors</span><span class="p">,</span> <span class="n">models</span> <span class="o">=</span> <span class="n">_calculate_reconstruction_errors</span><span class="p">(</span>
+            <span class="n">nmat</span><span class="p">,</span> <span class="n">max_clusters</span><span class="p">,</span> <span class="n">symmetric</span><span class="o">=</span><span class="n">symmetric</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Find the elbow point (optimal number of clusters)</span>
+        <span class="k">if</span> <span class="n">n_clusters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_clusters</span> <span class="o">=</span> <span class="n">_find_elbow_point</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;selected optimal number of clusters: </span><span class="si">{</span><span class="n">n_clusters</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Plot the reconstruction error curve if required</span>
+        <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ploting reconstruction error&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_clusters</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="n">errors</span><span class="p">,</span>
+                <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Reconstruction Error&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span>
+                <span class="n">n_clusters</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span>
+                <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Selected Clusters: </span><span class="si">{</span><span class="n">n_clusters</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Number of Clusters&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Reconstruction Error&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;NMF Reconstruction Error vs. Number of Clusters&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+        <span class="c1"># Return the optimal number of clusters and the corresponding model</span>
+        <span class="n">W</span><span class="p">,</span> <span class="n">H</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">n_clusters</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">symmetric</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;running symmetric NMF with </span><span class="si">{</span><span class="n">n_clusters</span><span class="si">}</span><span class="s2"> clusters&quot;</span><span class="p">)</span>
+            <span class="n">W</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_symnmf</span><span class="p">(</span><span class="n">nmat</span><span class="p">,</span> <span class="n">n_clusters</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">H</span> <span class="o">=</span> <span class="n">W</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Calculate NMF with the specified number of clusters</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;running NMF with </span><span class="si">{</span><span class="n">n_clusters</span><span class="si">}</span><span class="s2"> clusters&quot;</span><span class="p">)</span>
+            <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_nmf</span><span class="p">(</span><span class="n">nmat</span><span class="p">,</span> <span class="n">n_clusters</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_dataframes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">neighbors</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+                <span class="n">labels</span> <span class="o">=</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">index</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Labels must be provided for `return_dataframes==True`, if `neighbors` is not a DataFrame.&quot;</span>
+                <span class="p">)</span>
+        <span class="n">W</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">n_clusters</span><span class="p">))</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">n_clusters</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">NicheResult</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_clusters</span><span class="p">,</span> <span class="n">W</span><span class="o">=</span><span class="n">W</span><span class="p">,</span> <span class="n">H</span><span class="o">=</span><span class="n">H</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="plot_niches">
+<a class="viewcode-back" href="../../api/generated/nichefinder.plot_niches.html#nichefinder.plot_niches">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_niches</span><span class="p">(</span>
+    <span class="n">membership</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">only_shared</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">edge_width_scale</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the niches as a bipartite graph. One type of node represents the niches/clusters,</span>
+<span class="sd">    while the other type represents the cell types that are shared between multiple niches</span>
+<span class="sd">    after applying a threshold to the soft-memberships (thresholding is applied after scaling</span>
+<span class="sd">    the soft-memberships to [0, 1]).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        membership (Union[np.ndarray, pd.DataFrame]): Membership matrix (cell types × niches).</span>
+<span class="sd">        labels (Optional[List[str]]): Cell type labels. Required if `membership` is not a DataFrame.</span>
+<span class="sd">        threshold (float): Threshold for soft-memberships.</span>
+<span class="sd">        only_shared (bool): Plot only shared cell types between multiple niches.</span>
+<span class="sd">        scale (Optional[int]): Standard-scale the soft-memberships by the specified axis (0 or 1) if not None.</span>
+<span class="sd">        edge_width_scale (Optional[float]): If set, edge widths are scaled by</span>
+<span class="sd">            ``edge_width_scale * membership_weight``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">membership</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">membership</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">niches</span> <span class="o">=</span> <span class="n">membership</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">membership</span> <span class="o">=</span> <span class="n">membership</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">==</span> <span class="n">membership</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">niches</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">membership</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">&quot;networkx is required for this function, &quot;</span>
+            <span class="s2">&quot;install it via `pip install networkx`&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Scale soft-memberships</span>
+    <span class="k">if</span> <span class="n">scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">shp</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">scale</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">membership</span> <span class="o">=</span> <span class="p">(</span><span class="n">membership</span> <span class="o">-</span> <span class="n">membership</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">shp</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="n">membership</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">shp</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">membership</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">shp</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Preserve continuous weights before thresholding</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">membership</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Apply threshold for edge existence</span>
+    <span class="n">membership</span> <span class="o">=</span> <span class="p">(</span><span class="n">membership</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># Create a bipartite graph</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+    <span class="n">G</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">bipartite</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">G</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">niches</span><span class="p">,</span> <span class="n">bipartite</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Map niche labels to their integer indices for correct access</span>
+    <span class="n">niche_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">niches</span><span class="p">)}</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ct</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">niches</span><span class="p">:</span>
+            <span class="n">j_idx</span> <span class="o">=</span> <span class="n">niche_to_idx</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">membership</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j_idx</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j_idx</span><span class="p">])</span>
+
+    <span class="c1"># Remove cell types that are not shared between multiple niches</span>
+    <span class="n">degree_thr</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">only_shared</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="n">nodes_to_remove</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">node</span> <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">degree</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">labels</span> <span class="ow">and</span> <span class="n">degree</span> <span class="o">&lt;</span> <span class="n">degree_thr</span>
+    <span class="p">]</span>
+    <span class="n">G</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">(</span><span class="n">nodes_to_remove</span><span class="p">)</span>
+
+    <span class="c1"># Plot the bipartite graph using a kamada-kawai layout</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">kamada_kawai_layout</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+
+    <span class="n">edge_widths</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">edge_width_scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">edge_widths</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge_width_scale</span> <span class="o">*</span> <span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">()]</span>
+
+    <span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span>
+        <span class="n">G</span><span class="p">,</span>
+        <span class="n">pos</span><span class="p">,</span>
+        <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">node_size</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+        <span class="n">node_color</span><span class="o">=</span><span class="s2">&quot;skyblue&quot;</span><span class="p">,</span>
+        <span class="n">edge_color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span>
+        <span class="n">width</span><span class="o">=</span><span class="n">edge_widths</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Niche Analysis&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="plot_aggregated_neighbors">
+<a class="viewcode-back" href="../../api/generated/nichefinder.plot_aggregated_neighbors.html#nichefinder.plot_aggregated_neighbors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_aggregated_neighbors</span><span class="p">(</span>
+    <span class="n">neighbors</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">],</span>
+    <span class="n">membership</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">niches</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the aggregated spatial neighbors with cell type labels and niches.</span>
+<span class="sd">    Aggregated neighbors are displayed as a seaborn clustermap, with niches as annotations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        neighbors (Union[pd.DataFrame, sp.sparse.csr_matrix]): Aggregated spatial neighbors.</span>
+<span class="sd">        membership (Union[np.matrix, pd.DataFrame]): Membership matrix.</span>
+<span class="sd">        labels (Optional[List[str]]): Cell type labels. Required if `neighbors` is not a DataFrame.</span>
+<span class="sd">        niches (Optional[List[str]]): Niche labels. Required if `membership` is not a DataFrame.</span>
+<span class="sd">        **kwargs: Additional keyword arguments passed to `seaborn.clustermap`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">&quot;seaborn is required for this function, &quot;</span>
+            <span class="s2">&quot;install it via `pip install seaborn`&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Check if row/col names are provided</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">neighbors</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">==</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">neighbors</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">neighbors</span><span class="o">.</span><span class="n">toarray</span><span class="p">(),</span> <span class="n">index</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">membership</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">niches</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">niches</span><span class="p">)</span> <span class="o">==</span> <span class="n">membership</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">membership</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">membership</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">niches</span><span class="p">)</span>
+
+    <span class="c1"># Order the niches (columns of membership matrix) based on the hierarchical clustering</span>
+    <span class="n">linkage_matrix</span> <span class="o">=</span> <span class="n">linkage</span><span class="p">(</span><span class="n">membership</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;average&quot;</span><span class="p">)</span>
+    <span class="n">linkage_matrix</span> <span class="o">=</span> <span class="n">optimal_leaf_ordering</span><span class="p">(</span><span class="n">linkage_matrix</span><span class="p">,</span> <span class="n">membership</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="n">ordered_indices</span> <span class="o">=</span> <span class="n">leaves_list</span><span class="p">(</span><span class="n">linkage_matrix</span><span class="p">)</span>
+    <span class="n">ordered_membership</span> <span class="o">=</span> <span class="n">membership</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">ordered_indices</span><span class="p">]</span>
+
+    <span class="c1"># Convert membership values to color values using a continuous palette</span>
+    <span class="n">cmap</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="s2">&quot;viridis&quot;</span><span class="p">,</span> <span class="n">as_cmap</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">row_colors</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">ordered_membership</span><span class="o">.</span><span class="n">stack</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">cmap</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">membership</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span>
+        <span class="o">.</span><span class="n">unstack</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Plot the clustermap with niches as annotations</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">clustermap</span><span class="p">(</span>
+        <span class="n">neighbors</span><span class="p">,</span>
+        <span class="n">row_colors</span><span class="o">=</span><span class="n">row_colors</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_nmf</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">:</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run standard NMF on the adjacency matrix and return the factors and reconstruction error.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        adjacency_matrix (sp.sparse.csr_matrix): Aggregated spatial neighbors.</span>
+<span class="sd">        k (int): Number of components for NMF.</span>
+<span class="sd">        **kwargs: Additional keyword arguments passed to `sklearn.decomposition.NMF`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[np.ndarray, np.ndarray, float]: (H, W, reconstruction_error) where H is the</span>
+<span class="sd">        (k, n_types) feature matrix, W is the (n_types, k) membership matrix, and</span>
+<span class="sd">        reconstruction_error is the Frobenius norm of the difference between the</span>
+<span class="sd">        original adjacency matrix and the reconstructed matrix W @ H.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set default keyword arguments</span>
+    <span class="n">use_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="s2">&quot;random&quot;</span><span class="p">,</span> <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="n">use_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Run NMF</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">NMF</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="n">use_kwargs</span><span class="p">)</span>
+    <span class="n">W</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">)</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">components_</span>
+
+    <span class="c1"># Calculate the Frobenius norm of the difference (reconstruction error)</span>
+    <span class="n">reconstruction_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">adjacency_matrix</span> <span class="o">-</span> <span class="n">W</span> <span class="o">@</span> <span class="n">H</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="s2">&quot;fro&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">reconstruction_error</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_symnmf</span><span class="p">(</span>
+    <span class="n">adjacency_matrix</span><span class="p">,</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">max_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+    <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">_ignored</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implementation of symmetric NMF. </span>
+<span class="sd">    </span>
+<span class="sd">    Factorises ``A ≈ H Hᵀ`` via multiplicative updates with column renormalisation.</span>
+<span class="sd">    Each iteration applies the standard MU rule from Kuang et al. (2012)::</span>
+
+<span class="sd">        H_new &lt;- H * (A H) / (H Hᵀ H + eps)</span>
+
+<span class="sd">    and then normalises every column of ``H_new`` to unit L2 norm, storing</span>
+<span class="sd">    the column scales in ``d``.  Renormalisation prevents columns from</span>
+<span class="sd">    collapsing to zero (a known stagnation mode of plain MU) and keeps the</span>
+<span class="sd">    iterates in a bounded region without affecting the monotone decrease of</span>
+<span class="sd">    the objective.  On convergence, the column scales are restored so that</span>
+<span class="sd">    the returned ``H`` satisfies ``H @ H.T ≈ A``.</span>
+
+<span class="sd">    If the input matrix is not symmetric it is symmetrised as</span>
+<span class="sd">    ``A = (A + Aᵀ) / 2`` before factorisation and a ``UserWarning`` is</span>
+<span class="sd">    emitted.</span>
+
+<span class="sd">    Any keyword arguments not listed below are silently ignored so that</span>
+<span class="sd">    ``find_niches`` can forward its ``**kwargs`` without splitting them by</span>
+<span class="sd">    solver.</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        Kuang, D., Ding, C., &amp; Park, H. (2012). Symmetric nonnegative matrix</span>
+<span class="sd">        factorization for graph clustering. *Proceedings of the 2012 SIAM</span>
+<span class="sd">        International Conference on Data Mining (SDM)*, pp. 106–117.</span>
+<span class="sd">        https://doi.org/10.1137/1.9781611972825.10</span>
+
+<span class="sd">        Kuang, D., Yun, S., &amp; Park, H. (2015). SymNMF: Nonnegative low-rank</span>
+<span class="sd">        approximation of a similarity matrix for graph clustering.</span>
+<span class="sd">        *Journal of Global Optimization*, 62(3), 545–574.</span>
+<span class="sd">        https://doi.org/10.1007/s10898-014-0247-2</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        adjacency_matrix: (n, n) non-negative symmetric matrix (dense or sparse).</span>
+<span class="sd">            Non-symmetric inputs are automatically symmetrised.</span>
+<span class="sd">        k (int): Number of components / niches.</span>
+<span class="sd">        max_iter (int): Maximum number of multiplicative-update iterations.</span>
+<span class="sd">            Default ``1000``.</span>
+<span class="sd">        tol (float): Convergence tolerance on the relative change in the</span>
+<span class="sd">            normalised ``H`` between iterations. Default ``1e-4``.</span>
+<span class="sd">        random_state (int): Seed for the random initialisation of ``H``.</span>
+<span class="sd">            Default ``0``.</span>
+<span class="sd">        **_ignored: Extra keyword arguments are accepted but silently ignored</span>
+<span class="sd">            so callers can pass standard NMF kwargs without error.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple ``(H, reconstruction_error)`` where ``H`` has shape (n, k) and</span>
+<span class="sd">        ``reconstruction_error = ||A - H Hᵀ||_F``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+    <span class="n">A</span> <span class="o">=</span> <span class="n">_dense</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># SymNMF requires a symmetric input</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;Input matrix passed to _symnmf is not symmetric! &quot;</span>
+            <span class="s2">&quot;Symmetrising as A = (A + A.T) / 2 before factorisation.&quot;</span><span class="p">,</span>
+            <span class="ne">UserWarning</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">A</span> <span class="o">+</span> <span class="n">A</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span> <span class="o">+</span> <span class="mf">1e-2</span>
+
+    <span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-12</span>
+    <span class="c1"># Initialise column scales to 1</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iter</span><span class="p">):</span>
+        <span class="n">HtH</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">H</span>           <span class="c1"># (k, k)</span>
+        <span class="n">numerator</span> <span class="o">=</span> <span class="n">A</span> <span class="o">@</span> <span class="n">H</span>       <span class="c1"># (n, k)</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="n">H</span> <span class="o">@</span> <span class="n">HtH</span>   <span class="c1"># (n, k)</span>
+        <span class="n">H_new</span> <span class="o">=</span> <span class="n">H</span> <span class="o">*</span> <span class="p">(</span><span class="n">numerator</span> <span class="o">/</span> <span class="p">(</span><span class="n">denominator</span> <span class="o">+</span> <span class="n">eps</span><span class="p">))</span>
+
+        <span class="c1"># Column renormalisation (prevent collapse / unbounded growth)</span>
+        <span class="n">col_norms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">H_new</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">col_norms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">col_norms</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">d</span> <span class="o">*</span> <span class="n">col_norms</span>                          <span class="c1"># accumulate scales</span>
+        <span class="n">H_new</span> <span class="o">=</span> <span class="n">H_new</span> <span class="o">/</span> <span class="n">col_norms</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>   <span class="c1"># normalised iterate</span>
+
+        <span class="n">rel_change</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">H_new</span> <span class="o">-</span> <span class="n">H</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">H</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="n">H_new</span>
+        <span class="k">if</span> <span class="n">rel_change</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="c1"># Restore column scales so that H @ H.T ~= A</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">H</span> <span class="o">*</span> <span class="n">d</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">reconstruction_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span> <span class="o">-</span> <span class="n">H</span> <span class="o">@</span> <span class="n">H</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="s2">&quot;fro&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">H</span><span class="p">,</span> <span class="n">reconstruction_error</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_calculate_reconstruction_errors</span><span class="p">(</span>
+    <span class="n">adjacency_matrix</span><span class="p">:</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">,</span>
+    <span class="n">max_components</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">symmetric</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the reconstruction errors for different numbers of components in NMF.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        adjacency_matrix (sp.sparse.csr_matrix): Aggregated spatial neighbors.</span>
+<span class="sd">        max_components (int): Maximum number of components for NMF.</span>
+<span class="sd">        symmetric (bool): Use symmetric NMF instead of standard NMF. Default ``False``.</span>
+<span class="sd">        **kwargs: Additional keyword arguments passed to the chosen NMF solver.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[List[float], List[Tuple[np.ndarray, np.ndarray]]]: List of reconstruction</span>
+<span class="sd">        errors and ``(W, H)`` model pairs. For symmetric NMF, ``W = H_factor`` and</span>
+<span class="sd">        ``H = H_factor.T``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_components</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">symmetric</span><span class="p">:</span>
+            <span class="n">W</span><span class="p">,</span> <span class="n">reconstruction_error</span> <span class="o">=</span> <span class="n">_symnmf</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">H</span> <span class="o">=</span> <span class="n">W</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">reconstruction_error</span> <span class="o">=</span> <span class="n">_nmf</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reconstruction_error</span><span class="p">)</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">W</span><span class="p">,</span> <span class="n">H</span><span class="p">))</span>  <span class="c1"># Store models for later use</span>
+
+    <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">models</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_find_elbow_point</span><span class="p">(</span><span class="n">errors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the elbow point in the reconstruction error curve using the second derivative method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        errors (List[float]): List of reconstruction errors for different cluster numbers.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: Elbow point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Calculate first and second differences</span>
+    <span class="n">first_differences</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span>
+    <span class="n">second_differences</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">first_differences</span><span class="p">)</span>
+
+    <span class="c1"># Find the elbow point</span>
+    <span class="n">elbow_index</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">second_differences</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="p">)</span>  <span class="c1"># +1 to adjust for second derivative index shift</span>
+    <span class="k">return</span> <span class="n">elbow_index</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># +1 to adjust for 1-based cluster count</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">symmetrise_nmf_factors</span><span class="p">(</span>
+    <span class="n">W</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">H</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-12</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Combine asymmetric NMF factors ``W`` and ``H`` into a single symmetric</span>
+<span class="sd">    loading matrix suitable for neighbourhood scoring.</span>
+
+<span class="sd">    The two factors are column-normalised and blended::</span>
+
+<span class="sd">        S = alpha * col_norm(W) + (1 - alpha) * col_norm(H.T)</span>
+
+<span class="sd">    where ``W`` has shape (n_types, n_niches) and ``H`` has shape</span>
+<span class="sd">    (n_niches, n_types), so ``H.T`` has the same shape as ``W``.</span>
+
+<span class="sd">    ``alpha=0.5`` gives equal sender/receiver weight; ``alpha=1.0`` uses</span>
+<span class="sd">    only ``W`` (sender perspective); ``alpha=0.0`` uses only ``H.T``</span>
+<span class="sd">    (receiver perspective).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        W (np.ndarray): (n_types, n_niches) sender-type loading matrix.</span>
+<span class="sd">        H (np.ndarray): (n_niches, n_types) receiver-type loading matrix.</span>
+<span class="sd">        alpha (float): Blending weight in ``[0, 1]``. Default ``0.5``.</span>
+<span class="sd">        eps (float): Small constant for numerical stability. Default ``1e-12``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: (n_types, n_niches) symmetrised loading matrix ``S``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">alpha</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;alpha must be in [0, 1]; got </span><span class="si">{</span><span class="n">alpha</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">Wc</span> <span class="o">=</span> <span class="n">_col_norm</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span>
+    <span class="n">Hc</span> <span class="o">=</span> <span class="n">_col_norm</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span>  <span class="c1"># H.T: (n_types, n_niches)</span>
+    <span class="k">return</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">Wc</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">Hc</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Per-cell niche scoring</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="cell_niche_scores">
+<a class="viewcode-back" href="../../api/generated/nichefinder.cell_niche_scores.html#nichefinder.cell_niche_scores">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cell_niche_scores</span><span class="p">(</span>
+    <span class="n">adjacency</span><span class="p">:</span> <span class="n">Mat</span><span class="p">,</span>
+    <span class="n">L</span><span class="p">:</span> <span class="n">Mat</span><span class="p">,</span>
+    <span class="n">W</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">H</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;geometric&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">adjacency_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;out&quot;</span><span class="p">,</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span> <span class="s2">&quot;undirected&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;undirected&quot;</span><span class="p">,</span>
+    <span class="n">normalize_adjacency</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">normalize_S</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">normalize_N</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">s_sharpen</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">score_space</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;prob&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;prob&quot;</span><span class="p">,</span>
+    <span class="n">n_smooth_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">smooth_margin</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">min_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-12</span><span class="p">,</span>
+    <span class="n">cell_index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">niche_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">add_self_loops</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute per-cell niche scores by aggregating neighbourhood type compositions.</span>
+
+<span class="sd">    Two scoring methods are available:</span>
+
+<span class="sd">    - ``&quot;linear&quot;``:  ``Z = (P @ L) @ S`` - each cell&#39;s score is the linear</span>
+<span class="sd">      combination of its neighbours&#39; type fractions weighted by the niche profile.</span>
+<span class="sd">    - ``&quot;geometric&quot;``:  ``Z = exp( log(P @ L + eps) @ S )`` - weighted geometric</span>
+<span class="sd">      mean (missing niche components strongly suppress the score; AND-like logic).</span>
+
+<span class="sd">    When both ``W`` (n_types x n_niches) and ``H`` (n_niches x n_types) are</span>
+<span class="sd">    provided (i.e. asymmetric NMF output), they are symmetrised before scoring:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        S = \\alpha \\cdot \\text{col\\_norm}(W)</span>
+<span class="sd">            + (1-\\alpha) \\cdot \\text{col\\_norm}(H^T)</span>
+
+<span class="sd">    ``alpha=0.5`` gives equal sender/receiver weight; ``alpha=1.0`` is W-only</span>
+<span class="sd">    (sender perspective); ``alpha=0.0`` is H.T-only (receiver perspective).</span>
+<span class="sd">    When ``H=None``, ``S = col_norm(W)`` (or ``W`` if ``normalize_S=False``).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        adjacency (Mat): (n_cells, n_cells) adjacency matrix (i→j if ``adjacency[i,j] &gt; 0``).</span>
+<span class="sd">        adjacency_mode (str): Which adjacency mode to use: ``&#39;out&#39;`` (sender), ``&#39;in&#39;``</span>
+<span class="sd">            (receiver), or ``&#39;undirected&#39;``. Default ``&#39;undirected&#39;``.</span>
+<span class="sd">        normalize_adjacency (bool): Row-normalise ``adjacency`` before computing scores.</span>
+<span class="sd">            Default ``True``.</span>
+<span class="sd">        L (Mat): (n_cells, n_types) cell-type probabilities; rows should sum to 1.</span>
+<span class="sd">        W (array-like or DataFrame): (n_types, n_niches) niche-type loading matrix</span>
+<span class="sd">            (e.g. the membership matrix from :func:`find_niches`).</span>
+<span class="sd">        H (array-like or DataFrame, optional): (n_niches, n_types) transpose factor</span>
+<span class="sd">            from NMF. When provided, symmetrised with ``W`` via ``alpha``.</span>
+<span class="sd">        method (str): ``&#39;linear&#39;`` or ``&#39;geometric&#39;``. Default ``&#39;linear&#39;``.</span>
+<span class="sd">        alpha (float): Blending weight for W vs H.T when ``H`` is provided.</span>
+<span class="sd">            Default ``0.5``.</span>
+<span class="sd">        knn_mode (str): How to build the neighbourhood operator *P*:</span>
+<span class="sd">            ``&#39;out&#39;`` — row-normalise ``C`` (outgoing edges);</span>
+<span class="sd">            ``&#39;in&#39;`` — row-normalise ``C.T`` (incoming edges);</span>
+<span class="sd">            ``&#39;undirected&#39;`` — average of the two. Default ``&#39;undirected&#39;``.</span>
+<span class="sd">        normalize_knn (bool): Whether to row-normalise the kNN operator.</span>
+<span class="sd">            Default ``True``.</span>
+<span class="sd">        normalize_S (bool): Column-normalise the niche-type matrix ``S``</span>
+<span class="sd">            before scoring. Default ``True``.</span>
+<span class="sd">        normalize_N (bool): Row-normalise the neighbourhood type composition</span>
+<span class="sd">            ``N = P @ L`` before scoring (geometric method only). Default ``True``.</span>
+<span class="sd">        s_sharpen (float): Raise ``S`` to this power before normalisation</span>
+<span class="sd">            to emphasise core cell types (geometric method only). ``1.0`` is</span>
+<span class="sd">            no sharpening. Default ``1.0``.</span>
+<span class="sd">        score_space (str): ``&#39;prob&#39;`` returns ``exp(log_score)``;</span>
+<span class="sd">            ``&#39;log&#39;`` returns the log-score directly (geometric method only).</span>
+<span class="sd">            Default ``&#39;prob&#39;``.</span>
+<span class="sd">        n_smooth_iter (int): Number of conservative majority-vote smoothing</span>
+<span class="sd">            iterations applied to hard niche labels. ``0`` disables smoothing.</span>
+<span class="sd">            When ``&gt; 0``, an additional column ``&#39;niche_label&#39;`` with the</span>
+<span class="sd">            (optionally smoothed) hard assignment is added to the output.</span>
+<span class="sd">            Default ``0``.</span>
+<span class="sd">        smooth_margin (float): Minimum score-sum advantage required to flip a</span>
+<span class="sd">            cell&#39;s label during majority-vote smoothing. Default ``1.0``.</span>
+<span class="sd">        min_neighbors (int): Cells with strictly fewer kNN neighbours than this</span>
+<span class="sd">            threshold receive ``NaN`` scores. Default ``0`` (no filtering).</span>
+<span class="sd">        eps (float): Small constant for numerical stability. Default ``1e-12``.</span>
+<span class="sd">        cell_index (pd.Index, optional): Index for the output DataFrame rows.</span>
+<span class="sd">        niche_names (list of str, optional): Names for the niche columns.</span>
+<span class="sd">        add_self_loops (bool): Whether to add self-loops to the connectivity matrix. Default is True.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: (n_cells x n_niches) score matrix. Columns are named by</span>
+<span class="sd">        ``niche_names`` (inferred from ``W`` if it is a DataFrame). An extra</span>
+<span class="sd">        ``&#39;niche_label&#39;`` column is appended when ``n_smooth_iter &gt; 0``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">add_self_loops</span><span class="p">:</span>
+        <span class="c1"># Add self-loops to a copy of the adjacency matrix to avoid side effects</span>
+        <span class="k">if</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">adjacency</span><span class="p">):</span>
+            <span class="n">adjacency</span> <span class="o">=</span> <span class="n">adjacency</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="o">+</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">adjacency</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="n">adjacency</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">adjacency</span> <span class="o">=</span> <span class="n">adjacency</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">adjacency</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># resolve W/H to a single S matrix</span>
+    <span class="n">W_df</span> <span class="o">=</span> <span class="n">W</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+    <span class="n">Wn</span> <span class="o">=</span> <span class="n">W_df</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">H</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">H_df</span> <span class="o">=</span> <span class="n">H</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+        <span class="n">Hn</span> <span class="o">=</span> <span class="n">H_df</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># shape (n_niches, n_types)</span>
+        <span class="k">if</span> <span class="n">Hn</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="n">Wn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Wn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;H must be (n_niches=</span><span class="si">{</span><span class="n">Wn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">, n_types=</span><span class="si">{</span><span class="n">Wn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">); got </span><span class="si">{</span><span class="n">Hn</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">symmetrise_nmf_factors</span><span class="p">(</span><span class="n">Wn</span><span class="p">,</span> <span class="n">Hn</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">Wn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">niche_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">niche_names</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">W_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">W_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="s2">&quot;int64&quot;</span>
+            <span class="k">else</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;niche_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">niche_names</span><span class="p">)</span> <span class="o">!=</span> <span class="n">S</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">niche_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;niche_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">S</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">and</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;geometric&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;S_type_niche must be nonneg for method=&#39;geometric&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># optionally normalize S</span>
+    <span class="k">if</span> <span class="n">normalize_S</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;geometric&quot;</span> <span class="ow">and</span> <span class="n">s_sharpen</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">s_sharpen</span><span class="p">)</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">_col_norm</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;geometric&quot;</span> <span class="ow">and</span> <span class="n">s_sharpen</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">s_sharpen</span><span class="p">)</span>
+
+    <span class="c1"># build kNN operator P</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">normalize_adjacency</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">adjacency_mode</span> <span class="o">==</span> <span class="s2">&quot;out&quot;</span><span class="p">:</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="n">adjacency</span>
+        <span class="k">elif</span> <span class="n">adjacency_mode</span> <span class="o">==</span> <span class="s2">&quot;in&quot;</span><span class="p">:</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="n">adjacency</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">adjacency</span> <span class="o">+</span> <span class="n">adjacency</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">adjacency_mode</span> <span class="o">==</span> <span class="s2">&quot;out&quot;</span><span class="p">:</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="n">_row_norm</span><span class="p">(</span><span class="n">adjacency</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">adjacency_mode</span> <span class="o">==</span> <span class="s2">&quot;in&quot;</span><span class="p">:</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="n">_row_norm</span><span class="p">(</span><span class="n">adjacency</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">_row_norm</span><span class="p">(</span><span class="n">adjacency</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span> <span class="o">+</span> <span class="n">_row_norm</span><span class="p">(</span><span class="n">adjacency</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">))</span>
+
+    <span class="c1"># min-neighbour filter mask</span>
+    <span class="k">if</span> <span class="n">min_neighbors</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">n_nbrs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">((</span><span class="n">adjacency</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">mask_nan</span> <span class="o">=</span> <span class="n">n_nbrs</span> <span class="o">&lt;</span> <span class="n">min_neighbors</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mask_nan</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># neighbourhood type composition</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">P</span> <span class="o">@</span> <span class="n">L</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">_dense</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+
+    <span class="c1"># score</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">normalize_N</span><span class="p">:</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="n">N</span> <span class="o">/</span> <span class="p">(</span><span class="n">N</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">N</span> <span class="o">@</span> <span class="n">S</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;geometric&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">normalize_N</span><span class="p">:</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="n">N</span> <span class="o">/</span> <span class="p">(</span><span class="n">N</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+        <span class="n">log_score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">N</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span> <span class="o">@</span> <span class="n">S</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_score</span><span class="p">)</span> <span class="k">if</span> <span class="n">score_space</span> <span class="o">==</span> <span class="s2">&quot;prob&quot;</span> <span class="k">else</span> <span class="n">log_score</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown method &#39;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&#39;. Choose &#39;linear&#39; or &#39;geometric&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># apply min-neighbour mask</span>
+    <span class="k">if</span> <span class="n">mask_nan</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Z</span><span class="p">[</span><span class="n">mask_nan</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">cell_index</span> <span class="k">if</span> <span class="n">cell_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">RangeIndex</span><span class="p">(</span><span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">niche_names</span><span class="p">)</span>
+
+    <span class="c1"># optional majority-vote label smoothing</span>
+    <span class="k">if</span> <span class="n">n_smooth_iter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Compute hard labels from argmax (skip NaN rows)</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">hard_int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">hard_int</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">valid</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="c1"># Only smooth the valid subset</span>
+            <span class="n">C_csr</span> <span class="o">=</span> <span class="n">adjacency</span><span class="o">.</span><span class="n">tocsr</span><span class="p">()</span> <span class="k">if</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">adjacency</span><span class="p">)</span> <span class="k">else</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">adjacency</span><span class="p">)</span>
+            <span class="n">smoothed</span> <span class="o">=</span> <span class="n">_conservative_majority</span><span class="p">(</span>
+                <span class="n">C_csr</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="n">valid</span><span class="p">)],</span>
+                <span class="n">hard_int</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span>
+                <span class="n">n_iter</span><span class="o">=</span><span class="n">n_smooth_iter</span><span class="p">,</span>
+                <span class="n">margin</span><span class="o">=</span><span class="n">smooth_margin</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">hard_int</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">=</span> <span class="n">smoothed</span>
+
+        <span class="n">niche_label</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="n">hard_int</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">niche_label</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">niche_names</span><span class="p">[</span><span class="n">hard_int</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+        <span class="n">df</span><span class="p">[</span><span class="s2">&quot;niche_label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">niche_label</span>
+
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+
+<div class="viewcode-block" id="niche_scores_from_nmf">
+<a class="viewcode-back" href="../../api/generated/nichefinder.niche_scores_from_nmf.html#nichefinder.niche_scores_from_nmf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">niche_scores_from_nmf</span><span class="p">(</span>
+    <span class="n">C</span><span class="p">:</span> <span class="n">Mat</span><span class="p">,</span>
+    <span class="n">L</span><span class="p">:</span> <span class="n">Mat</span><span class="p">,</span>
+    <span class="n">W</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">H</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">direction</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;out&quot;</span><span class="p">,</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+    <span class="n">normalize_C_for_scoring</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_membership</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-12</span><span class="p">,</span>
+    <span class="n">return_dataframes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+    <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]],</span>
+    <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]],</span>
+    <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]],</span>
+<span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map NMF niches learned on ``A = L^T C L`` back to per-cell niche scores.</span>
+
+<span class="sd">    This function implements the pointwise-product scoring that explicitly captures</span>
+<span class="sd">    sender/receiver roles from directed NMF factorisations. For undirected NMF</span>
+<span class="sd">    (symmetric input matrix), consider averaging ``W`` and ``H.T`` into a single</span>
+<span class="sd">    ``S`` matrix and using :func:`cell_niche_scores` instead, or pass</span>
+<span class="sd">    ``direction=&quot;both&quot;`` and use ``S_mem`` as a symmetrised view.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        C (Mat): (n_cells, n_cells) directed adjacency (i→j if ``C[i,j] &gt; 0``).</span>
+<span class="sd">        L (Mat): (n_cells, n_types) cell-type probabilities; rows should sum to 1.</span>
+<span class="sd">        W (array-like or DataFrame): (n_types, n_niches) — sender-type loadings from NMF.</span>
+<span class="sd">        H (array-like or DataFrame): (n_niches, n_types) — receiver-type loadings from NMF.</span>
+<span class="sd">        direction (str): Which role scores to compute: ``&#39;out&#39;`` (sender), ``&#39;in&#39;``</span>
+<span class="sd">            (receiver), or ``&#39;both&#39;``. Default ``&#39;out&#39;``.</span>
+<span class="sd">        normalize_C_for_scoring (bool): Row-normalise ``C`` before computing scores.</span>
+<span class="sd">            Default ``True``.</span>
+<span class="sd">        return_membership (bool): Whether to compute and return row-normalised</span>
+<span class="sd">            membership ``S_mem``. Default ``True``.</span>
+<span class="sd">        eps (float): Small constant for numerical stability. Default ``1e-12``.</span>
+<span class="sd">        return_dataframes (bool): Return results as DataFrames. Default ``True``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of ``(S_out, S_in, S_mem)`` where each element is ``None`` if not</span>
+<span class="sd">        requested. ``S_out`` and ``S_in`` are (n_cells, n_niches) score matrices.</span>
+<span class="sd">        ``S_mem`` is the row-normalised mixture of the requested direction(s).</span>
+
+<span class="sd">    Shapes:</span>
+<span class="sd">        - ``S_out[i, k]``: cell *i* fits niche *k* as a sender.</span>
+<span class="sd">        - ``S_in[i, k]``:  cell *i* fits niche *k* as a receiver.</span>
+<span class="sd">        - ``S_mem[i, k]``: soft niche membership (sums to 1 across niches).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_as_np</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must be 2D, got </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">a</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_df</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">cols</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span> <span class="k">if</span> <span class="n">return_dataframes</span> <span class="k">else</span> <span class="n">X</span>
+
+    <span class="c1"># Convert W/H and derive niche column names</span>
+    <span class="n">W_df</span> <span class="o">=</span> <span class="n">W</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">_as_np</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="s2">&quot;W&quot;</span><span class="p">))</span>
+    <span class="n">H_df</span> <span class="o">=</span> <span class="n">H</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">_as_np</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">))</span>
+    <span class="n">Wn</span><span class="p">,</span> <span class="n">Hn</span> <span class="o">=</span> <span class="n">W_df</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">H_df</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+
+    <span class="n">niche_cols</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">list</span><span class="p">(</span><span class="n">W_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">W_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="s2">&quot;int64&quot;</span>
+        <span class="k">else</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;niche_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Wn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">niche_cols</span><span class="p">)</span> <span class="o">!=</span> <span class="n">Wn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">niche_cols</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;niche_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Wn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+
+    <span class="c1"># Shape validation</span>
+    <span class="k">if</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;C must be square; got </span><span class="si">{</span><span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">L</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;L rows must match C; got L </span><span class="si">{</span><span class="n">L</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, C </span><span class="si">{</span><span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">L</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">Wn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">t</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;W rows must match n_types=</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">; got W </span><span class="si">{</span><span class="n">Wn</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">Wn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">Hn</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;H must be (n_niches, n_types)=(</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">); got H </span><span class="si">{</span><span class="n">Hn</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># OUT scores: S_out = (L W) * ((P_out @ L) @ H^T)</span>
+    <span class="n">S_out</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">direction</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;out&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">):</span>
+        <span class="n">P_out</span> <span class="o">=</span> <span class="n">_row_norm</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span> <span class="k">if</span> <span class="n">normalize_C_for_scoring</span> <span class="k">else</span> <span class="n">C</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">_dense</span><span class="p">(</span><span class="n">L</span> <span class="o">@</span> <span class="n">Wn</span><span class="p">)</span>                   <span class="c1"># (n, k)</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="n">_dense</span><span class="p">(</span><span class="n">P_out</span> <span class="o">@</span> <span class="n">L</span><span class="p">)</span> <span class="o">@</span> <span class="n">Hn</span><span class="o">.</span><span class="n">T</span>         <span class="c1"># (n, k)</span>
+        <span class="n">S_out</span> <span class="o">=</span> <span class="n">U</span> <span class="o">*</span> <span class="n">V</span>
+
+    <span class="c1"># IN scores: S_in = (L H^T) * ((P_in^T @ L) @ W)</span>
+    <span class="n">S_in</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">direction</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;in&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">):</span>
+        <span class="n">P_in</span> <span class="o">=</span> <span class="n">_col_norm</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span> <span class="k">if</span> <span class="n">normalize_C_for_scoring</span> <span class="k">else</span> <span class="n">C</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">_dense</span><span class="p">(</span><span class="n">L</span> <span class="o">@</span> <span class="n">Hn</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>                 <span class="c1"># (n, k)</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="n">_dense</span><span class="p">(</span><span class="n">P_in</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">L</span><span class="p">)</span> <span class="o">@</span> <span class="n">Wn</span>          <span class="c1"># (n, k)</span>
+        <span class="n">S_in</span> <span class="o">=</span> <span class="n">U</span> <span class="o">*</span> <span class="n">V</span>
+
+    <span class="c1"># Membership: row-normalised sum of requested directions</span>
+    <span class="n">S_mem</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">return_membership</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;out&quot;</span><span class="p">:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">S_out</span>
+        <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;in&quot;</span><span class="p">:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">S_in</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span> <span class="k">if</span> <span class="n">S_out</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">S_out</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.0</span> <span class="k">if</span> <span class="n">S_in</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">S_in</span><span class="p">)</span>
+        <span class="n">den</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span>
+        <span class="n">S_mem</span> <span class="o">=</span> <span class="n">base</span> <span class="o">/</span> <span class="n">den</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">_df</span><span class="p">(</span><span class="n">S_out</span><span class="p">,</span> <span class="n">niche_cols</span><span class="p">)</span> <span class="k">if</span> <span class="n">S_out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_df</span><span class="p">(</span><span class="n">S_in</span><span class="p">,</span> <span class="n">niche_cols</span><span class="p">)</span> <span class="k">if</span> <span class="n">S_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_df</span><span class="p">(</span><span class="n">S_mem</span><span class="p">,</span> <span class="n">niche_cols</span><span class="p">)</span> <span class="k">if</span> <span class="n">S_mem</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Private majority-vote smoothing helpers</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_csr_row_argmax</span><span class="p">(</span><span class="n">V_csr</span><span class="p">:</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">,</span> <span class="n">fallback_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return per-row argmax of a CSR matrix, using ``fallback_idx`` for empty rows.&quot;&quot;&quot;</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">V_csr</span><span class="o">.</span><span class="n">tocsr</span><span class="p">()</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="n">fallback_idx</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">indptr</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">indptr</span><span class="p">,</span> <span class="n">V</span><span class="o">.</span><span class="n">indices</span><span class="p">,</span> <span class="n">V</span><span class="o">.</span><span class="n">data</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+        <span class="n">s</span><span class="p">,</span> <span class="n">e</span> <span class="o">=</span> <span class="n">indptr</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">indptr</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="n">best</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">d</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">best</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_conservative_majority</span><span class="p">(</span>
+    <span class="n">A</span><span class="p">:</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">spmatrix</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">n_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">margin</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">remove_self_loops</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Iterative conservative majority-vote label smoothing on a sparse graph.</span>
+
+<span class="sd">    A cell&#39;s label is flipped only when a neighbour label accumulates at least</span>
+<span class="sd">    ``margin`` more votes than the current label, ensuring conservative updates.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        A (spmatrix): (n, n) adjacency / kNN weight matrix.</span>
+<span class="sd">        y (np.ndarray): Integer label vector of length n.</span>
+<span class="sd">        n_iter (int): Maximum number of smoothing iterations. Default ``10``.</span>
+<span class="sd">        margin (float): Minimum vote-score improvement required to flip. Default ``1.0``.</span>
+<span class="sd">        remove_self_loops (bool): Remove diagonal entries from ``A`` before</span>
+<span class="sd">            smoothing. Useful when the kNN graph includes self-connections.</span>
+<span class="sd">            Default ``False``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Smoothed integer label vector (same label space as ``y``).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">labs</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">labs</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="n">A</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">tocsr</span><span class="p">()</span> <span class="k">if</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="k">else</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">remove_self_loops</span><span class="p">:</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">A</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">A</span><span class="o">.</span><span class="n">eliminate_zeros</span><span class="p">()</span>
+
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iter</span><span class="p">):</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">A</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">y</span><span class="p">)),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="p">(</span><span class="n">A</span> <span class="o">@</span> <span class="n">Y</span><span class="p">)</span><span class="o">.</span><span class="n">tocsr</span><span class="p">()</span>
+
+        <span class="n">cur_score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">V</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">best_score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">V</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">best</span> <span class="o">=</span> <span class="n">_csr_row_argmax</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">fallback_idx</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="n">y_new</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">change</span> <span class="o">=</span> <span class="p">(</span><span class="n">best</span> <span class="o">!=</span> <span class="n">y</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">((</span><span class="n">best_score</span> <span class="o">-</span> <span class="n">cur_score</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">margin</span><span class="p">)</span>
+        <span class="n">y_new</span><span class="p">[</span><span class="n">change</span><span class="p">]</span> <span class="o">=</span> <span class="n">best</span><span class="p">[</span><span class="n">change</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">y_new</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+            <span class="k">break</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y_new</span>
+
+    <span class="k">return</span> <span class="n">labs</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, J. Patrick Pett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
