@@ -59,7 +59,7 @@ pip nichefinder .
 
 Example notebooks:
 - [toy example](https://github.com/Teichlab/nichefinder/blob/main/notebooks/example_simulated_data.ipynb)
-- [GWAS analysis](https://github.com/Teichlab/nichefinder/blob/main/notebooks/niche_score_mapping.ipynb)
+- [score plotting](https://github.com/Teichlab/nichefinder/blob/main/notebooks/niche_score_mapping.ipynb)
 
 (*running time: <5min*)
 
